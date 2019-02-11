@@ -10,6 +10,11 @@ Use the package manager [pip](https://pip.pypa.io/en/stable/) to install AO3 API
 pip install ao3_api
 ```
 
+## Github
+
+https://github.com/ArmindoFlores/ao3_api
+
+
 ## Usage
 
 There are 3 types of classes added by the API: ```AO3.Work```, ```AO3.User``` and ```AO3.Session```
