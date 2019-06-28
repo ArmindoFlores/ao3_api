@@ -158,6 +158,12 @@ class Work:
         return warnings
 
     @property
+    def rating(self):
+        html = self.soup.find("dd", {'class': 'rating tags'})
+        rating = html.a.string
+        return rating
+
+    @property
     def summary(self):
         div = self.soup.find("div", {'class': 'preface group'})
         html = div.find("blockquote", {'class': 'userstuff'})
