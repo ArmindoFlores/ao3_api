@@ -46,7 +46,7 @@ You can get the chapter text by calling ```work.load_chapters()``` followed by `
 >>> print(' '.join(text.split(' ')[:20]))  # Print the first 20 words
 
 Chapter Text
-It all starts with a suggestion.“Hey, we should make this a thing,” Midoriya says one day, out of the
+It all starts with a suggestion. "Hey, we should make this a thing," Midoriya says one day, out of the
 >>> 
 ```
 
