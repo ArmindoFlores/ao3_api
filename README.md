@@ -81,7 +81,7 @@ If you have an archiveofourown.org account, you can login with using ```AO3.sess
 
 ```python
 >>> import AO3
->>> sess = AO3.session("myusername", "mypassword")
+>>> sess = AO3.Session("myusername", "mypassword")
 >>> sess.get_n_bookmarks()
 10
 >>> sess.get_bookmarks(page=1)  # Get all bookmarks in a page in the format (id, 'work title', ['author1', 'author2'])
