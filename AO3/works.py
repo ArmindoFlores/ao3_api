@@ -51,50 +51,68 @@ class Work:
     def authors(self):
         authors = self.soup.find_all("a", {'rel': 'author'})
         author_list = []
-        for author in authors:
-            author_list.append(author.string.strip())
+        if authors is not None:
+            for author in authors:
+                author_list.append(author.string.strip())
             
         return author_list
 
     @property
     def chapters(self):
-        chapters = self.soup.find("dd", {'class': 'chapters'}).string.split("/")[0]
-        return int(self.str_format(chapters))
+        chapters = self.soup.find("dd", {'class': 'chapters'})
+        if chapters is not None:
+            return int(self.str_format(chapters.string.split("/")[0]))
+        return 0
 
     @property
     def hits(self):
-        hits = self.soup.find("dd", {'class': 'hits'}).string
-        return int(self.str_format(hits))
+        hits = self.soup.find("dd", {'class': 'hits'})
+        if hits is not None:
+            return int(self.str_format(hits.string))
+        return 0
 
     @property
     def kudos(self):
-        kudos = self.soup.find("dd", {'class': 'kudos'}).string
-        return int(self.str_format(kudos))
+        kudos = self.soup.find("dd", {'class': 'kudos'})
+        if kudos is not None:
+            return int(self.str_format(kudos.string))
+        return 0
 
     @property
     def comments(self):
-        comments = self.soup.find("dd", {'class': 'comments'}).string
-        return int(self.str_format(comments))
+        comments = self.soup.find("dd", {'class': 'comments'})
+        if comments is not None:
+            return int(self.str_format(comments.string))
+        return 0
 
     @property
     def words(self):
-        words = self.soup.find("dd", {'class': 'words'}).string
-        return int(self.str_format(words))
+        words = self.soup.find("dd", {'class': 'words'})
+        if words is not None:
+            return int(self.str_format(words.string))
+        return 0
 
     @property
     def language(self):
-        language = self.soup.find("dd", {'class': 'language'}).string.strip()
-        return language
+        language = self.soup.find("dd", {'class': 'language'})
+        if language is not None:
+            return language.string.strip()
+        else:
+            return "Unknown"
 
     @property
     def bookmarks(self):
-        bookmarks = self.soup.find("dd", {'class': 'bookmarks'}).string
-        return int(self.str_format(bookmarks))
+        bookmarks = self.soup.find("dd", {'class': 'bookmarks'})
+        if bookmarks is not None:
+            return int(self.str_format(bookmarks.string))
+        return 0
 
     @property
     def title(self):
-        title = self.soup.find("div", {'class': 'preface group'}).h2.string
-        return str(title.strip())
+        title = self.soup.find("div", {'class': 'preface group'})
+        if title is not None:
+            return str(title.h2.string.strip())
+        return ""
     
     @property
     def date_published(self):
@@ -113,60 +131,72 @@ class Work:
     def tags(self):
         html = self.soup.find("dd", {'class': 'freeform tags'})
         tags = []
-        for tag in html.find_all("li"):
-            tags.append(tag.a.string)
+        if html is not None:
+            for tag in html.find_all("li"):
+                tags.append(tag.a.string)
         return tags
 
     @property
     def characters(self):
         html = self.soup.find("dd", {'class': 'character tags'})
         characters = []
-        for character in html.find_all("li"):
-            characters.append(character.a.string)
+        if html is not None:
+            for character in html.find_all("li"):
+                characters.append(character.a.string)
         return characters
 
     @property
     def relationships(self):
         html = self.soup.find("dd", {'class': 'relationship tags'})
         relationships = []
-        for relationship in html.find_all("li"):
-            relationships.append(relationship.a.string)
+        if html is not None:
+            for relationship in html.find_all("li"):
+                relationships.append(relationship.a.string)
         return relationships
 
     @property
     def fandoms(self):
         html = self.soup.find("dd", {'class': 'fandom tags'})
         fandoms = []
-        for fandom in html.find_all("li"):
-            fandoms.append(fandom.a.string)
+        if html is not None:
+            for fandom in html.find_all("li"):
+                fandoms.append(fandom.a.string)
         return fandoms
 
     @property
     def categories(self):
         html = self.soup.find("dd", {'class': 'category tags'})
         categories = []
-        for category in html.find_all("li"):
-            categories.append(category.a.string)
+        if html is not None:
+            for category in html.find_all("li"):
+                categories.append(category.a.string)
         return categories
 
     @property
     def warnings(self):
         html = self.soup.find("dd", {'class': 'warning tags'})
         warnings = []
-        for warning in html.find_all("li"):
-            warnings.append(warning.a.string)
+        if html is not None:
+            for warning in html.find_all("li"):
+                warnings.append(warning.a.string)
         return warnings
 
     @property
     def rating(self):
         html = self.soup.find("dd", {'class': 'rating tags'})
-        rating = html.a.string
-        return rating
+        if html is not None:
+            rating = html.a.string
+            return rating
+        return "Unknown"
 
     @property
     def summary(self):
         div = self.soup.find("div", {'class': 'preface group'})
+        if div is None:
+            return ""
         html = div.find("blockquote", {'class': 'userstuff'})
+        if html is None:
+            return ""
         return str(BeautifulSoup.getText(html))
     
     @property
