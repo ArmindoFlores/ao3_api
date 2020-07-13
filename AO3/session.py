@@ -4,7 +4,21 @@ from . import utils
 
 
 class Session:
+    """
+    AO3 session object
+    """
+
     def __init__(self, username, password):
+        """Creates a new AO3 session object
+
+        Args:
+            username (str): AO3 username
+            password (str): AO3 password
+
+        Raises:
+            utils.LoginError: Login was unsucessful (wrong username or password)
+        """
+
         self.username = username
         self.url = "https://archiveofourown.org/users/%s"%self.username
         
@@ -27,7 +41,14 @@ class Session:
 
     def get_subscriptions(self, page=1):
         """Get the name of the first 20 work subscriptions. If there are more than 20, you may need to specify the page.
-        Must be logged in to use."""
+        Must be logged in to use.
+
+        Args:
+            page (int, optional): Subscriptions page. Defaults to 1.
+
+        Returns:
+            list: List of tuples (workid, workname, authors)
+        """
         
         url = self._subscriptions_url.format(self.username, page)
         soup = self.request(url)
@@ -48,7 +69,14 @@ class Session:
 
     def get_bookmarks(self, page=1):
         """Get the name of the first 20 work bookmarks. If there are more than 20, you may need to specify the page.
-        Must be logged in to use."""
+        Must be logged in to use.
+
+        Args:
+            page (int, optional): Bookmarks page. Defaults to 1.
+
+        Returns:
+            list: List of tuples (workid, workname, authors)
+        """
         
         url = self._bookmarks_url.format(self.username, page)
         soup = self.request(url)
@@ -68,8 +96,12 @@ class Session:
         return bookms
 
     def get_n_bookmarks(self):
-        """Get the number of bookmarks.
-        Must be logged in to use."""
+        """Get the number of your bookmarks.
+        Must be logged in to use.
+
+        Returns:
+            int: Number of bookmarks
+        """
 
         url = self._bookmarks_url.format(self.username, 1)
         soup = self.request(url)
@@ -80,15 +112,39 @@ class Session:
 
         
     def request(self, url, data={}):
-        """Request a web page and return a BeautifulSoup object."""
+        """Request a web page and return a BeautifulSoup object.
+
+        Args:
+            url (str): Url to request
+            data (dict, optional): Optional data to send in the request. Defaults to {}.
+
+        Returns:
+            bs4.BeautifulSoup: BeautifulSoup object representing the requested page's html
+        """
+
         req = self.session.get(url, data=data)
         content = req.content
         soup = BeautifulSoup(content, "html.parser")
         return soup
 
     def post(self, *args, **kwargs):
+        """Make a post request with the current session
+
+        Returns:
+            requests.Request
+        """
+
         return self.session.post(*args, **kwargs)
 
     @staticmethod
     def str_format(string):
+        """Formats a given string
+
+        Args:
+            string (str): String to format
+
+        Returns:
+            str: Formatted string
+        """
+
         return string.replace(",", "")

@@ -1,11 +1,27 @@
 from datetime import date
+from functools import cached_property
+
 import requests
 from bs4 import BeautifulSoup
+
 from . import utils
 
 
 class Work:
+    """
+    AO3 work object
+    """
+
     def __init__(self, workid):
+        """Creates a new AO3 work object
+
+        Args:
+            workid (int): AO3 work ID
+
+        Raises:
+            requests.HTTPError: Raised if the work wasn't found
+        """
+
         self.chapter_ids = []
         self.chapter_names = []
         self.workid = workid
@@ -16,7 +32,17 @@ class Work:
 
     def get_chapter_text(self, chapter):
         """Gets the chapter text from the specified chapter.
-        Work.load_chapters() must be called first."""
+        Work.load_chapters() must be called first.
+
+        Args:
+            chapter (int): Work chapter
+
+        Raises:
+            utils.UnloadedError: Raises this error if the chapters aren't loaded
+
+        Returns:
+            str: Chapter text
+        """
         
         if chapter > 0 and chapter <= self.chapters and self.chapters > 1:
             if len(self.chapter_ids) == self.chapters:
@@ -33,7 +59,9 @@ class Work:
             raise utils.UnloadedError("Work.load_chapters() must be called first")
     
     def load_chapters(self):
-        """Loads the urls for all chapters"""
+        """
+        Loads the urls for all chapters
+        """
         
         if self.chapters > 1:
             navigate = self.request("https://archiveofourown.org/works/%i/navigate?view_adult=true"%self.workid)
@@ -47,8 +75,14 @@ class Work:
             self.chapter_ids = [""]
             self.chapter_names = [self.title]
 
-    @property
+    @cached_property
     def authors(self):
+        """Returns the list of the work's author
+
+        Returns:
+            list: list of authors
+        """
+
         authors = self.soup.find_all("a", {'rel': 'author'})
         author_list = []
         if authors is not None:
@@ -57,78 +91,144 @@ class Work:
             
         return author_list
 
-    @property
+    @cached_property
     def chapters(self):
+        """Returns the number of chapters of this work
+
+        Returns:
+            int: number of chapters
+        """
+        
         chapters = self.soup.find("dd", {'class': 'chapters'})
         if chapters is not None:
             return int(self.str_format(chapters.string.split("/")[0]))
         return 0
 
-    @property
+    @cached_property
     def hits(self):
+        """Returns the number of hits this work has
+
+        Returns:
+            int: number of hits
+        """
+
         hits = self.soup.find("dd", {'class': 'hits'})
         if hits is not None:
             return int(self.str_format(hits.string))
         return 0
 
-    @property
+    @cached_property
     def kudos(self):
+        """Returns the number of kudos this work has
+
+        Returns:
+            int: number of kudos
+        """
+
         kudos = self.soup.find("dd", {'class': 'kudos'})
         if kudos is not None:
             return int(self.str_format(kudos.string))
         return 0
 
-    @property
+    @cached_property
     def comments(self):
+        """Returns the number of comments this work has
+
+        Returns:
+            int: number of comments
+        """
+
         comments = self.soup.find("dd", {'class': 'comments'})
         if comments is not None:
             return int(self.str_format(comments.string))
         return 0
 
-    @property
+    @cached_property
     def words(self):
+        """Returns the this work's word count
+
+        Returns:
+            int: number of words
+        """
+
         words = self.soup.find("dd", {'class': 'words'})
         if words is not None:
             return int(self.str_format(words.string))
         return 0
 
-    @property
+    @cached_property
     def language(self):
+        """Returns this work's language
+
+        Returns:
+            str: Language
+        """
+
         language = self.soup.find("dd", {'class': 'language'})
         if language is not None:
             return language.string.strip()
         else:
             return "Unknown"
 
-    @property
+    @cached_property
     def bookmarks(self):
+        """Returns the number of bookmarks this work has
+
+        Returns:
+            int: number of bookmarks
+        """
+
         bookmarks = self.soup.find("dd", {'class': 'bookmarks'})
         if bookmarks is not None:
             return int(self.str_format(bookmarks.string))
         return 0
 
-    @property
+    @cached_property
     def title(self):
+        """Returns the title of this work
+
+        Returns:
+            str: work title
+        """
+
         title = self.soup.find("div", {'class': 'preface group'})
         if title is not None:
             return str(title.h2.string.strip())
         return ""
     
-    @property
+    @cached_property
     def date_published(self):
+        """Returns the date this work was published
+
+        Returns:
+            datetime.date: publish date
+        """
+
         dp = self.soup.find("dd", {'class': 'published'}).string
         return date(*list(map(int, dp.split("-"))))
 
-    @property
+    @cached_property
     def date_updated(self):
+        """Returns the date this work was last updated
+
+        Returns:
+            datetime.date: update date
+        """
+
         if self.chapters > 1:
             du = self.soup.find("dd", {'class': 'status'}).string
             return date(*list(map(int, du.split("-"))))
         else:
             return self.date_published
     
-    @property
+    @cached_property
     def tags(self):
+        """Returns all the work's tags
+
+        Returns:
+            list: List of tags
+        """
+
         html = self.soup.find("dd", {'class': 'freeform tags'})
         tags = []
         if html is not None:
@@ -136,8 +236,14 @@ class Work:
                 tags.append(tag.a.string)
         return tags
 
-    @property
+    @cached_property
     def characters(self):
+        """Returns all the work's characters
+
+        Returns:
+            list: List of characters
+        """
+
         html = self.soup.find("dd", {'class': 'character tags'})
         characters = []
         if html is not None:
@@ -145,8 +251,14 @@ class Work:
                 characters.append(character.a.string)
         return characters
 
-    @property
+    @cached_property
     def relationships(self):
+        """Returns all the work's relationships
+
+        Returns:
+            list: List of relationships
+        """
+        
         html = self.soup.find("dd", {'class': 'relationship tags'})
         relationships = []
         if html is not None:
@@ -154,8 +266,14 @@ class Work:
                 relationships.append(relationship.a.string)
         return relationships
 
-    @property
+    @cached_property
     def fandoms(self):
+        """Returns all the work's fandoms
+
+        Returns:
+            list: List of fandoms
+        """
+
         html = self.soup.find("dd", {'class': 'fandom tags'})
         fandoms = []
         if html is not None:
@@ -163,8 +281,14 @@ class Work:
                 fandoms.append(fandom.a.string)
         return fandoms
 
-    @property
+    @cached_property
     def categories(self):
+        """Returns all the work's categories
+
+        Returns:
+            list: List of categories
+        """
+
         html = self.soup.find("dd", {'class': 'category tags'})
         categories = []
         if html is not None:
@@ -172,8 +296,14 @@ class Work:
                 categories.append(category.a.string)
         return categories
 
-    @property
+    @cached_property
     def warnings(self):
+        """Returns all the work's warnings
+
+        Returns:
+            list: List of warnings
+        """
+
         html = self.soup.find("dd", {'class': 'warning tags'})
         warnings = []
         if html is not None:
@@ -181,16 +311,28 @@ class Work:
                 warnings.append(warning.a.string)
         return warnings
 
-    @property
+    @cached_property
     def rating(self):
+        """Returns this work's rating
+
+        Returns:
+            str: Rating
+        """
+
         html = self.soup.find("dd", {'class': 'rating tags'})
         if html is not None:
             rating = html.a.string
             return rating
         return "Unknown"
 
-    @property
+    @cached_property
     def summary(self):
+        """Returns this work's summary
+
+        Returns:
+            str: Summary
+        """
+
         div = self.soup.find("div", {'class': 'preface group'})
         if div is None:
             return ""
@@ -199,12 +341,28 @@ class Work:
             return ""
         return str(BeautifulSoup.getText(html))
     
-    @property
-    def url(self):        
+    @cached_property
+    def url(self):
+        """Returns the URL to this work
+
+        Returns:
+            str: work URL
+        """    
+
         return "https://archiveofourown.org/works/%i"%self.workid      
 
     @staticmethod
     def request(url):
+        """Request a web page and return a BeautifulSoup object.
+
+        Args:
+            url (str): Url to request
+            data (dict, optional): Optional data to send in the request. Defaults to {}.
+
+        Returns:
+            bs4.BeautifulSoup: BeautifulSoup object representing the requested page's html
+        """
+
         req = requests.get(url)
         content = req.content
         soup = BeautifulSoup(content, "html.parser")
@@ -212,7 +370,13 @@ class Work:
 
     @staticmethod
     def str_format(string):
+        """Formats a given string
+
+        Args:
+            string (str): String to format
+
+        Returns:
+            str: Formatted string
+        """
+
         return string.replace(",", "")
-        
-        
-        
