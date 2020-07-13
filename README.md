@@ -17,7 +17,7 @@ https://github.com/ArmindoFlores/ao3_api
 
 ## Usage
 
-There are 3 types of classes added by the API: ```AO3.Work```, ```AO3.User``` and ```AO3.Session```
+There are 4 types of classes added by the API: ```AO3.Work```, ```AO3.User```, ```AO3.Search``` and ```AO3.Session```
 
 
 You can use the ```AO3.Work``` class to pull data from a work stored in archiveofourown.org
@@ -115,9 +115,49 @@ AO3.utils.LoginError: Invalid username or password
 >>>
 ```
 
+To search for works, you can either use the `AO3.search()` function and parse the BeautifulSoup object returned yourself, or use the `AO3.Search``` class to automatically do that for you
+
+```python
+import AO3
+search = AO3.Search(any_field="Clarke Lexa", word_count=AO3.utils.Constraint(5000, 15000))
+search.update()
+print(search.total_results)
+for result in search.results:
+  print(result)
+```
+
+```python
+3070
+(5889004, 'five times lexa falls for clarke', ['nutmeg101'])
+(10988430, 'an incomplete list of reasons (why Clarke loves Lexa)', ['RaeDMagdon'])
+(6216283, "five times clarke and lexa aren’t sure if they're a couple or not", ['nutmeg101'])
+(6422242, 'Chemistry', ['CaffeineDream'])
+(3516830, 'The New Commander (Lexa Joining Camp Jaha)', ['Vision'])
+(23012080, "it's always been (right in front of me)", ['kursty'])
+(8915020, 'Ode to Clarke', ['Combatboots'])
+(7383091, 'The Girlfriend Tag', ['hush_mya'])
+(11100006, 'The After-Heda Chronicles', ['hedasgirl'])
+(6748720, 'The Counter', ['FompFloat'])
+(3504113, 'The Games We Play', ['MsRay3'])
+(13550457, 'Self Control', ['Drummer_Girl'])
+(9647864, 'May We Meet Again', ['HJ1'])
+(5196890, "A l'épreuve des balles", ['Kardhane (ThroughMyMind)'])
+(13438785, 'Celebration', ['Na_Na_Nessa'])
+(10139129, 'No Filter', ['Bal3xicon'])
+(None, 'My osom girlfriend', ['Tabitha Craft (Tabithacraft)'])
+(9927671, 'Another level of fucked up', ['I_am_clexa'])
+(4687346, "He's Jealous", ['WhoKilledBambi'])
+(3847735, "(Don't Ever Want to Tame) This Wild Heart", ['acaelousqueadcentrum'])
+```
+
+You can then use the workid to load one of the works you searched for. To get more then the first 20 works, change the page number using 
+```python
+search.page = 2
+```
+
 ## Future functionalities
 
-In the future, if no official API is released, I might add a search option and more session options (subscribe to works, kudos and comment).
+In the future, if no official API is released, I might add more session options (subscribe to works, kudos and comment).
 
 
 ## Contact info

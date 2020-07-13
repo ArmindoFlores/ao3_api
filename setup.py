@@ -5,11 +5,15 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="ao3-api",
-    version="0.0.3",
+    version="0.0.4",
     author="Francisco Rodrigues",
     author_email="francisco.rodrigues0908@gmail.com",
     description="An unofficial AO3 (archiveofourown.org) API",
-    download_url="https://github.com/ArmindoFlores/ao3_api/archive/ao3_api_v_03.tar.gz",
+    download_url="https://github.com/ArmindoFlores/ao3_api/archive/ao3_api_v_04.tar.gz",
+    install_requires=[
+        "BeautifulSoup4",
+        "requests"  
+    ],
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/ArmindoFlores/ao3_api",
