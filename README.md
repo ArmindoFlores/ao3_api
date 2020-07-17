@@ -88,7 +88,10 @@ If you have an archiveofourown.org account, you can login with using ```AO3.sess
 [(123456, 'Work Title', ['author1'])]
 >>> sess.get_subscriptions(page=1) # Get all subscriptions in a page in the format (id, 'work title', ['author1', 'author2'])
 [(123456, 'Work Title', ['author1'])]
->>>
+>>> sess.kudos(14392692)  # Leave kudos in a work
+True
+>>> sess.comment(5889004, "Keep up the good work!", True)  # Leave a comment
+[...]
 ```
 
 If you provide a wrong username / password this error will be raised:
@@ -115,7 +118,7 @@ AO3.utils.LoginError: Invalid username or password
 >>>
 ```
 
-To search for works, you can either use the `AO3.search()` function and parse the BeautifulSoup object returned yourself, or use the `AO3.Search` class to automatically do that for you
+To search for works, you can either use the `AO3.search()` function and parse the BeautifulSoup object returned yourself, or use the `AO3.Search``` class to automatically do that for you
 
 ```python
 import AO3
@@ -154,10 +157,6 @@ You can then use the workid to load one of the works you searched for. To get mo
 ```python
 search.page = 2
 ```
-
-## Future functionalities
-
-In the future, if no official API is released, I might add more session options (subscribe to works, kudos and comment).
 
 
 ## Contact info
