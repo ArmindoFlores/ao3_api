@@ -135,6 +135,86 @@ class Session:
         """
 
         return self.session.post(*args, **kwargs)
+    
+    def comment(self, chapterid, comment_text, oneshot=False):
+        """Leaves a comment on a specific work
+
+        Args:
+            chapterid (int): Chapter id
+            comment_text (str): Comment text (must have between 1 and 10000 characters)
+            oneshot (bool): Should be True if the work has only one chapter. In this case, chapterid becomes workid
+
+        Raises:
+            utils.InvalidWorkidError: Invalid workid
+
+        Returns:
+            requests.models.Response: Response object
+        """
+        
+        if oneshot:
+            referer = f"https://archiveofourown.org/works/{chapterid}"
+        else:
+            referer = f"https://archiveofourown.org/works/{chapterid}"
+        soup = self.request(referer)
+            
+        if soup.find("div", {"class": "flash error"}) is not None:
+            raise utils.InvalidWorkidError("Invalid chapterid")
+        
+        x_csrf_token = authenticity_token = soup.find("input", {"name": "authenticity_token"}).attrs["value"]
+        pseud_id = soup.find("input", {"name": "comment[pseud_id]"}).attrs["value"]
+        data = {
+            "authenticity_token": authenticity_token,
+            "comment[pseud_id]": pseud_id,
+            "comment[comment_content]": comment_text,
+            "controller_name": "works" if oneshot else "chapters",
+            "commit": "Comment"
+        }
+        headers = {
+            "referer": referer,
+            "x-csrf-token": x_csrf_token,
+            "x-requested-with": "XMLHttpRequest",
+            "x-newrelic-id": "VQcCWV9RGwIJVFFRAw=="
+        }
+        response = self.session.post(f"{referer}/comments", headers=headers, data=data)
+        return response
+    
+    def kudos(self, workid):
+        """Leave a 'kudos' in a specific work
+
+        Args:
+            workid (int/str): ID of the work
+
+        Raises:
+            utils.UnexpectedResponseError: Unexpected response received
+            utils.InvalidWorkidError: Invalid workid (work doesn't exist)
+
+        Returns:
+            bool: True if successful, False if you already left kudos there
+        """
+        
+        soup = self.request(f"https://archiveofourown.org/works/{workid}")
+        if "404" in soup.title.getText() and "Error" in soup.title.getText():
+            raise utils.InvalidWorkidError("Invalid workid")
+        x_csrf_token = authenticity_token = soup.find("meta", {"name": "csrf-token"}).attrs["content"]
+        data = {
+            "authenticity_token": authenticity_token,
+            "kudo[commentable_id]": workid,
+            "kudo[commentable_type]": "Work"
+        }
+        headers = {
+            "referer": f"https://archiveofourown.org/works/{workid}",
+            "x-csrf-token": x_csrf_token,
+            "x-requested-with": "XMLHttpRequest",
+            "x-newrelic-id": "VQcCWV9RGwIJVFFRAw=="
+        }
+        response = self.session.post(f"https://archiveofourown.org/kudos.js", headers=headers, data=data)
+
+        if response.status_code == 201:
+            return True
+        elif response.status_code == 422:
+            return False
+        else:
+            raise utils.UnexpectedResponseError(f"Unexpected HTTP status code received ({response.status_code})")
 
     @staticmethod
     def str_format(string):

@@ -7,6 +7,16 @@ class UnloadedError(Exception):
     def __init__(self, message, errors=[]):
         super().__init__(message)
         self.errors = errors
+        
+class UnexpectedResponseError(Exception):
+    def __init__(self, message, errors=[]):
+        super().__init__(message)
+        self.errors = errors
+        
+class InvalidWorkidError(Exception):
+    def __init__(self, message, errors=[]):
+        super().__init__(message)
+        self.errors = errors
 
 
 class Query:
