@@ -74,6 +74,30 @@ class Work:
         else:
             self.chapter_ids = [""]
             self.chapter_names = [self.title]
+            
+    def download(self, filetype="PDF"):
+        """Downloads this work
+
+        Args:
+            filetype (str, optional): Desired filetype. Defaults to "PDF".
+
+        Raises:
+            utils.DownloadError: Raised if there was an error with the download
+            utils.UnexpectedResponseError: Raised if the filetype is not available for download
+
+        Returns:
+            bytes: File content
+        """
+        
+        download_btn = self.soup.find("li", {"class": "download"})
+        for download_type in download_btn.findAll("li"):
+            if download_type.a.getText() == filetype:
+                url = f"https://archiveofourown.org/{download_type.a.attrs['href']}"
+                req = requests.get(url)
+                if not req.ok:
+                    raise utils.DownloadError("An error occurred while downloading the work")
+                return req.content
+        raise utils.UnexpectedResponseError(f"Filetype '{filetype}' is not available for download")
 
     @cached_property
     def authors(self):
