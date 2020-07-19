@@ -112,7 +112,6 @@ class Session(GuestSession):
                    'user[password]': password,
                    'authenticity_token': self.authenticity_token}
         post = self.session.post("https://archiveofourown.org/users/login", params=payload, allow_redirects=False)
-        print(post.status_code)
         if not post.status_code == 302:
             raise utils.LoginError("Invalid username or password")
 
@@ -185,8 +184,9 @@ class Session(GuestSession):
 
         url = self._bookmarks_url.format(self.username, 1)
         soup = self.request(url)
-        h2 = soup.find("div", {'id': 'main'}).h2.string.strip()
-        n = h2.split(" ")[0]
+        div = soup.find("div", {'id': 'inner'})
+        span = div.find("span", {'class': 'current'}).getText().replace("(", "").replace(")", "")
+        n = span.split(" ")[1]
         
         return int(self.str_format(n))    
 
