@@ -9,7 +9,7 @@ setuptools.setup(
     author="Francisco Rodrigues",
     author_email="francisco.rodrigues0908@gmail.com",
     description="An unofficial AO3 (archiveofourown.org) API",
-    download_url="https://github.com/ArmindoFlores/ao3_api/archive/ao3_api_v_06.tar.gz",
+    download_url="https://github.com/ArmindoFlores/ao3_api/archive/ao3_api_v_1.0.0.tar.gz",
     install_requires=[
         "BeautifulSoup4",
         "requests"  
