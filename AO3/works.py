@@ -98,6 +98,54 @@ class Work:
                     raise utils.DownloadError("An error occurred while downloading the work")
                 return req.content
         raise utils.UnexpectedResponseError(f"Filetype '{filetype}' is not available for download")
+    
+    def leave_kudos(self, session):
+        """Leave a 'kudos' in this work
+
+        Args:
+            session (AO3.Session/AO3.GuestSession): session object
+
+        Raises:
+            utils.UnexpectedResponseError: Unexpected response received
+            utils.InvalidWorkidError: Invalid workid (work doesn't exist)
+            utils.AuthError: Invalid authenticity token
+
+        Returns:
+            bool: True if successful, False if you already left kudos there
+        """
+        
+        return utils.kudos(self.workid, session)
+    
+    def comment(self, chapter, comment_text, session, email="", name=""):
+        """Leaves a comment on this work
+
+        Args:
+            chapter (int): Chapter number
+            comment_text (str): Comment text
+            session (AO3.Session, optional): Session object. Defaults to None (posts anonimously).
+
+        Raises:
+            IndexError: Invalid chapter number
+            utils.UnloadedError: Couldn't load chapter ids. Call Work.load_chapters() first
+
+        Returns:
+            requests.models.Response: Response object
+        """
+        
+        if chapter < 1 or chapter > self.chapters:
+            raise IndexError(f"Invalid chapter number")
+        
+        if len(self.chapter_ids) != self.chapters:
+            raise utils.UnloadedError("Work.load_chapters() must be called first")
+        
+        if self.chapters == 1:
+            chapterid = self.workid
+            oneshot = True
+        else:
+            chapterid = self.chapter_ids[chapter-1]
+            oneshot = False
+            
+        return utils.comment(chapterid, comment_text, oneshot, email=email, name=name)
 
     @cached_property
     def authors(self):

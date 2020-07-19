@@ -1,3 +1,7 @@
+import requests
+from bs4 import BeautifulSoup
+
+
 class LoginError(Exception):
     def __init__(self, message, errors=[]):
         super().__init__(message)
@@ -19,6 +23,21 @@ class InvalidWorkidError(Exception):
         self.errors = errors
         
 class DownloadError(Exception):
+    def __init__(self, message, errors=[]):
+        super().__init__(message)
+        self.errors = errors
+        
+class AuthError(Exception):
+    def __init__(self, message, errors=[]):
+        super().__init__(message)
+        self.errors = errors 
+        
+class DuplicateCommentError(Exception):
+    def __init__(self, message, errors=[]):
+        super().__init__(message)
+        self.errors = errors
+        
+class PseudError(Exception):
     def __init__(self, message, errors=[]):
         super().__init__(message)
         self.errors = errors
@@ -90,4 +109,137 @@ def workid_from_url(url):
         if split_url[index+1].isdigit():
             return int(split_url[index+1])
     return
+
+def comment(chapterid, comment_text, sess, oneshot=False, email="", name=""):
+    """Leaves a comment on a specific work
+
+    Args:
+        chapterid (int): Chapter id
+        comment_text (str): Comment text (must have between 1 and 10000 characters)
+        oneshot (bool): Should be True if the work has only one chapter. In this case, chapterid becomes workid
+        sess (AO3.Session/AO3.GuestSession): Session object to request with.
+        email (str): Email to post with. Only used if sess is None. Defaults to "".
+        name (str): Name that will appear on the comment. Only used if sess is None. Defaults to "".
+
+    Raises:
+        utils.InvalidWorkidError: Invalid workid
+        utils.UnexpectedResponseError: Unknown error
+        utils.PseudoError: Couldn't find a valid pseudonym to post under
+        utils.DuplicateCommentError: The comment you're trying to post was already posted
+        ValueError: Invalid name/email
+
+    Returns:
+        requests.models.Response: Response object
+    """
+
+    headers = {
+        "x-requested-with": "XMLHttpRequest",
+        "x-newrelic-id": "VQcCWV9RGwIJVFFRAw==",
+        "x-csrf-token": sess.authenticity_token
+    }
+        
+    if sess.is_authed:
+        if oneshot:
+            referer = f"https://archiveofourown.org/works/{chapterid}"
+        else:
+            referer = f"https://archiveofourown.org/chapters/{chapterid}"
+            
+        soup = sess.request(referer)            
+        pseud = soup.find("input", {"name": "comment[pseud_id]"})
+        if pseud is None:
+            pseud = soup.find("select", {"name": "comment[pseud_id]"})
+            pseud_id = None
+            for option in pseud.findAll("option"):
+                if "selected" in option.attrs and option.attrs["selected"] == "selected":
+                    pseud_id = option.attrs["value"]
+                    break
+        else:
+            pseud_id = pseud.attrs["value"]
+            
+        if pseud_id is None:
+            raise PseudError("Couldn't find your pseud's id")
+            
+        data = {
+            "authenticity_token": sess.authenticity_token,
+            "comment[pseud_id]": pseud_id,
+            "comment[comment_content]": comment_text,
+        }
+        
+        if oneshot:
+            data["work_id"] = str(chapterid)
+        else:
+            data["chapter_id"] = str(chapterid)
+    else:
+        if email == "" or name == "":
+            raise ValueError("You need to specify both an email and a name!")
+        
+        data = {
+            "authenticity_token": sess.authenticity_token,
+            "comment[email]": email,
+            "comment[name]": name,
+            "comment[comment_content]": comment_text,
+        }
+        if oneshot:
+            data["work_id"] = str(chapterid)
+        else:
+            data["chapter_id"] = str(chapterid)
+
+    response = sess.post(f"https://archiveofourown.org/comments.js", headers=headers, data=data)
+    if response.status_code == 404:
+        if len(response.content) > 0:
+            return response
+        else:
+            raise InvalidWorkidError(f"Invalid {'workid' if oneshot else 'chapterid'}")
     
+    if response.status_code == 422:
+        json = response.json()
+        if "errors" in json:
+            if "auth_error" in json["errors"]:
+                raise AuthError("Invalid authentication token. Try calling session.refresh_auth_token()")
+        raise UnexpectedResponseError(f"Unexpected json received:\n"+str(json))
+    elif response.status_code == 200:
+        raise DuplicateCommentError("You have already left this comment here")
+
+    raise UnexpectedResponseError(f"Unexpected HTTP status code received ({response.status_code})")
+    
+def kudos(workid, session):
+    """Leave a 'kudos' in a specific work
+
+    Args:
+        workid (int/str): ID of the work
+
+    Raises:
+        utils.UnexpectedResponseError: Unexpected response received
+        utils.InvalidWorkidError: Invalid workid (work doesn't exist)
+        utils.AuthError: Invalid authenticity token
+
+    Returns:
+        bool: True if successful, False if you already left kudos there
+    """
+    
+    data = {
+        "authenticity_token": session.authenticity_token,
+        "kudo[commentable_id]": workid,
+        "kudo[commentable_type]": "Work"
+    }
+    headers = {
+        "x-csrf-token": session.authenticity_token,
+        "x-requested-with": "XMLHttpRequest",
+        "x-newrelic-id": "VQcCWV9RGwIJVFFRAw=="
+    }
+    response = session.post(f"https://archiveofourown.org/kudos.js", headers=headers, data=data)
+    
+    if response.status_code == 201:
+        return True  # Success
+    elif response.status_code == 422:
+        json = response.json()
+        if "errors" in json:
+            if "auth_error" in json["errors"]:
+                raise AuthError("Invalid authentication token. Try calling session.refresh_auth_token()")
+            elif "user_id" in json["errors"] or "ip_address" in json["errors"]:
+                return False  # User has already left kudos
+            elif "no_commentable" in json["errors"]:
+                raise InvalidWorkidError("Invalid workid")
+        raise UnexpectedResponseError(f"Unexpected json received:\n"+str(json))
+    else:
+        raise UnexpectedResponseError(f"Unexpected HTTP status code received ({response.status_code})")
