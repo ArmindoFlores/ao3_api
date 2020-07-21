@@ -1,3 +1,5 @@
+[![Documentation Status](https://readthedocs.org/projects/ao3-api/badge/?version=latest)](https://ao3-api.readthedocs.io/en/latest/?badge=latest)
+
 # AO3 API
 
 This is an unofficial API that let's you access some of AO3's (archiveofourown.org) data through Python.

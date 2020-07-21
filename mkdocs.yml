@@ -1,5 +1,4 @@
 site_name: AO3 API
-theme: readthedocs
 docs_dir: docs
 
 nav:
