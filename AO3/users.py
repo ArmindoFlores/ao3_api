@@ -23,6 +23,19 @@ class User:
         self.soup_works = self.request("https://archiveofourown.org/users/%s/works?page=1"%(username))
         self.loaded_page = 1
         self.soup_profile = self.request("https://archiveofourown.org/users/%s/profile"%username)
+        
+    def get_avatar(self):
+        """Returns a tuple containing the name of the file and its data
+
+        Returns:
+            tuple: (name: str, img: bytes)
+        """
+        
+        icon = self.soup_profile.find("p", {"class": "icon"})
+        src = icon.img.attrs["src"]
+        name = src.split("/")[-1].split("?")[0]
+        img = requests.get(src).content
+        return name, img
 
     @cached_property
     def works(self):
