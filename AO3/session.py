@@ -56,7 +56,7 @@ class GuestSession:
         soup = BeautifulSoup(req.content, "html.parser")
         token = soup.find("input", {"name": "authenticity_token"})
         if token is None:
-            return utils.UnexpectedResponseError("Couldn't refresh token")
+            raise utils.UnexpectedResponseError("Couldn't refresh token")
         self.authenticity_token = token.attrs["value"]
         
     def request(self, url, data={}):
