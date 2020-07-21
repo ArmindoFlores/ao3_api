@@ -17,6 +17,8 @@ https://github.com/ArmindoFlores/ao3_api
 
 ## Usage
 
+__OUTDATED, VISIT THE [DOCUMENTATION PAGE](https://ao3-api.readthedocs.io) FOR MORE INFO__
+
 There are 4 types of classes added by the API: ```AO3.Work```, ```AO3.User```, ```AO3.Search``` and ```AO3.Session```
 
 

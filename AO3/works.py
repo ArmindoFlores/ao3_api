@@ -141,9 +141,12 @@ class Work:
         pages = 0
         div = soup.find("div", {"id": "comments_placeholder"})
         ol = div.find("ol", {"class": "pagination actions"})
-        for li in ol.findAll("li"):
-            if li.getText().isdigit():
-                pages = int(li.getText())   
+        if ol is None:
+            pages = 1
+        else:
+            for li in ol.findAll("li"):
+                if li.getText().isdigit():
+                    pages = int(li.getText())   
         
         comments = []
         for page in range(pages):
