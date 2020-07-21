@@ -4,6 +4,8 @@ from functools import cached_property
 import requests
 from bs4 import BeautifulSoup
 
+from . import utils
+
 
 class User:
     """
@@ -98,6 +100,8 @@ class User:
         """
 
         req = requests.get(url)
+        if req.status_code == 429:
+            raise utils.HTTPError("We are being rate-limited. Try again in a while or reduce the number of requests")
         content = req.content
         soup = BeautifulSoup(content, "html.parser")
         return soup

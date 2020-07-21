@@ -70,6 +70,9 @@ class GuestSession:
         else:
             req = self.session.get("https://archiveofourown.org")
             
+        if req.status_code == 429:
+            raise utils.HTTPError("We are being rate-limited. Try again in a while or reduce the number of requests")
+            
         soup = BeautifulSoup(req.content, "html.parser")
         token = soup.find("input", {"name": "authenticity_token"})
         if token is None:
@@ -88,6 +91,8 @@ class GuestSession:
         """
 
         req = self.session.get(url, data=data)
+        if req.status_code == 429:
+            raise utils.HTTPError("We are being rate-limited. Try again in a while or reduce the number of requests")
         content = req.content
         soup = BeautifulSoup(content, "html.parser")
         return soup
@@ -99,7 +104,10 @@ class GuestSession:
             requests.Request
         """
 
-        return self.session.post(*args, **kwargs)
+        req = self.session.post(*args, **kwargs)
+        if req.status_code == 429:
+            raise utils.HTTPError("We are being rate-limited. Try again in a while or reduce the number of requests")
+        return req
     
     def __del__(self):
         self.session.close()
@@ -132,7 +140,7 @@ class Session(GuestSession):
         payload = {'user[login]': username,
                    'user[password]': password,
                    'authenticity_token': self.authenticity_token}
-        post = self.session.post("https://archiveofourown.org/users/login", params=payload, allow_redirects=False)
+        post = self.post("https://archiveofourown.org/users/login", params=payload, allow_redirects=False)
         if not post.status_code == 302:
             raise utils.LoginError("Invalid username or password")
 

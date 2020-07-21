@@ -5,6 +5,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from . import utils
+from .comment import Comment
 
 
 class Work:
@@ -63,12 +64,12 @@ class Work:
         Loads the urls for all chapters
         """
         
-        if self.chapters > 1:
+        if not self.oneshot:
             navigate = self.request("https://archiveofourown.org/works/%i/navigate?view_adult=true"%self.workid)
             all_chapters = navigate.find("ol", {'class': 'chapter index group'})
             self.chapter_ids = []
             self.chapter_names = []
-            for chapter in all_chapters.find_all("li"):
+            for chapter in all_chapters.findAll("li"):
                 self.chapter_ids.append(chapter.a['href'].split("/")[-1])
                 self.chapter_names.append(chapter.a.string)
         else:
@@ -94,10 +95,46 @@ class Work:
             if download_type.a.getText() == filetype:
                 url = f"https://archiveofourown.org/{download_type.a.attrs['href']}"
                 req = requests.get(url)
+                if req.status_code == 429:
+                    raise utils.HTTPError("We are being rate-limited. Try again in a while or reduce the number of requests")
                 if not req.ok:
                     raise utils.DownloadError("An error occurred while downloading the work")
                 return req.content
         raise utils.UnexpectedResponseError(f"Filetype '{filetype}' is not available for download")
+    
+    def get_comments(self, chapter=None):
+        if self.oneshot:
+            chapter_id = self.workid
+        else:
+            if chapter is None:
+                raise ValueError("chapter cannot be 'None'")
+            if chapter <= 0 or chapter >= self.chapters:
+                raise IndexError("Invalid chapter number")
+            if len(self.chapter_ids) != self.chapters:
+                raise utils.UnloadedError("Work.load_chapters() must be called first")
+            
+            chapter_id = self.chapter_ids[chapter-1]
+            
+        url = f"https://archiveofourown.org/comments/show_comments?page=%d&chapter_id={chapter_id}"
+        soup = self.request(url%1)
+        
+        pages = 0
+        div = soup.find("div", {"id": "comments_placeholder"})
+        ol = div.find("ol", {"class": "pagination actions"})
+        for li in ol.findAll("li"):
+            if li.getText().isdigit():
+                pages = int(li.getText())
+                
+        
+        comments = []
+        for page in range(pages):
+            if page != 0:
+                soup = self.request(url%(page+1))
+            ol = soup.find("ol", {"class": "thread"})
+            for li in ol.findAll("li", {"role": "article"}, recursive=False):
+                id_ = int(li.attrs["id"][8:])
+                comments.append(Comment(id_, chapter_id))
+        return comments
     
     def leave_kudos(self, session):
         """Leave a 'kudos' in this work
@@ -140,12 +177,14 @@ class Work:
         
         if self.chapters == 1:
             chapterid = self.workid
-            oneshot = True
         else:
             chapterid = self.chapter_ids[chapter-1]
-            oneshot = False
             
-        return utils.comment(chapterid, comment_text, oneshot, email=email, name=name)
+        return utils.comment(chapterid, comment_text, self.oneshot, email=email, name=name)
+    
+    @property
+    def oneshot(self):
+        return self.chapters == 1
 
     @cached_property
     def authors(self):
@@ -436,6 +475,8 @@ class Work:
         """
 
         req = requests.get(url)
+        if req.status_code == 429:
+            raise utils.HTTPError("We are being rate-limited. Try again in a while or reduce the number of requests")
         content = req.content
         soup = BeautifulSoup(content, "html.parser")
         return soup

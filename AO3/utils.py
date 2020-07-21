@@ -41,6 +41,11 @@ class PseudError(Exception):
     def __init__(self, message, errors=[]):
         super().__init__(message)
         self.errors = errors
+        
+class HTTPError(Exception):
+    def __init__(self, message, errors=[]):
+        super().__init__(message)
+        self.errors = errors
 
 
 class Query:
@@ -186,6 +191,8 @@ def comment(chapterid, comment_text, sess, oneshot=False, commentid=None, email=
         })
 
     response = sess.post(f"https://archiveofourown.org/comments.js", headers=headers, data=data)
+    if response.status_code == 429:
+        raise HTTPError("We are being rate-limited. Try again in a while or reduce the number of requests")
     if response.status_code == 404:
         if len(response.content) > 0:
             return response
@@ -225,6 +232,8 @@ def delete_comment(commentid, session):
     }
     
     req = session.post(f"https://archiveofourown.org/comments/{commentid}", data=data, allow_redirects=False)
+    if req.status_code == 429:
+        raise HTTPError("We are being rate-limited. Try again in a while or reduce the number of requests")
     if req.status_code == 302:
         return
     else:
@@ -264,6 +273,8 @@ def kudos(workid, session):
         "referer": "https://archiveofourown.org/work/{workid}"
     }
     response = session.post("https://archiveofourown.org/kudos.js", headers=headers, data=data)
+    if response.status_code == 429:
+        raise HTTPError("We are being rate-limited. Try again in a while or reduce the number of requests")
     
     if response.status_code == 201:
         return True  # Success
