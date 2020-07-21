@@ -107,7 +107,7 @@ class Work:
 
         Raises:
             utils.UnexpectedResponseError: Unexpected response received
-            utils.InvalidWorkidError: Invalid workid (work doesn't exist)
+            utils.InvalidIdError: Invalid workid (work doesn't exist)
             utils.AuthError: Invalid authenticity token
 
         Returns:

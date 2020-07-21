@@ -14,22 +14,28 @@ class GuestSession:
         self.username = ""
         self.session = requests.Session()
         
-    def comment(self, chapterid, comment_text, oneshot=False):
+    def comment(self, chapterid, comment_text, oneshot=False, commentid=None):
         """Leaves a comment on a specific work
 
         Args:
-            chapterid (int): Chapter id
+            chapterid (str/int): Chapter id
             comment_text (str): Comment text (must have between 1 and 10000 characters)
             oneshot (bool): Should be True if the work has only one chapter. In this case, chapterid becomes workid
+            commentid (str/int): If specified, the comment is posted as a reply to this one. Defaults to None.
 
         Raises:
-            utils.InvalidWorkidError: Invalid workid
+            utils.InvalidIdError: Invalid workid
+            utils.UnexpectedResponseError: Unknown error
+            utils.PseudoError: Couldn't find a valid pseudonym to post under
+            utils.DuplicateCommentError: The comment you're trying to post was already posted
+            ValueError: Invalid name/email
 
         Returns:
             requests.models.Response: Response object
         """
         
-        return utils.comment(chapterid, comment_text, self, oneshot)
+        response = utils.comment(chapterid, comment_text, self, oneshot, commentid)
+        return response
     
         
     def kudos(self, workid):
@@ -40,7 +46,7 @@ class GuestSession:
 
         Raises:
             utils.UnexpectedResponseError: Unexpected response received
-            utils.InvalidWorkidError: Invalid workid (work doesn't exist)
+            utils.InvalidIdError: Invalid workid (work doesn't exist)
 
         Returns:
             bool: True if successful, False if you already left kudos there
@@ -49,10 +55,21 @@ class GuestSession:
         return utils.kudos(workid, self)
         
     def refresh_auth_token(self):
+        """Refreshes the authenticity token
+
+        Raises:
+            utils.UnexpectedResponseError: Couldn't refresh the token
+        """
+        
+        # For some reason, the auth token in the root path only works if you're 
+        # unauthenticated. To get around that, we check if this is an authed
+        # session and, if so, get the token from the profile page.
+        
         if self.is_authed:
             req = self.session.get(f"https://archiveofourown.org/users/{self.username}")
         else:
             req = self.session.get("https://archiveofourown.org")
+            
         soup = BeautifulSoup(req.content, "html.parser")
         token = soup.find("input", {"name": "authenticity_token"})
         if token is None:

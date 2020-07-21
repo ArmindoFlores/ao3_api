@@ -17,7 +17,7 @@ class UnexpectedResponseError(Exception):
         super().__init__(message)
         self.errors = errors
         
-class InvalidWorkidError(Exception):
+class InvalidIdError(Exception):
     def __init__(self, message, errors=[]):
         super().__init__(message)
         self.errors = errors
@@ -110,7 +110,7 @@ def workid_from_url(url):
             return int(split_url[index+1])
     return
 
-def comment(chapterid, comment_text, sess, oneshot=False, email="", name=""):
+def comment(chapterid, comment_text, sess, oneshot=False, commentid=None, email="", name=""):
     """Leaves a comment on a specific work
 
     Args:
@@ -118,11 +118,12 @@ def comment(chapterid, comment_text, sess, oneshot=False, email="", name=""):
         comment_text (str): Comment text (must have between 1 and 10000 characters)
         oneshot (bool): Should be True if the work has only one chapter. In this case, chapterid becomes workid
         sess (AO3.Session/AO3.GuestSession): Session object to request with.
+        commentid (str/int): If specified, the comment is posted as a reply to this comment. Defaults to None.
         email (str): Email to post with. Only used if sess is None. Defaults to "".
         name (str): Name that will appear on the comment. Only used if sess is None. Defaults to "".
 
     Raises:
-        utils.InvalidWorkidError: Invalid workid
+        utils.InvalidIdError: Invalid workid
         utils.UnexpectedResponseError: Unknown error
         utils.PseudoError: Couldn't find a valid pseudonym to post under
         utils.DuplicateCommentError: The comment you're trying to post was already posted
@@ -137,6 +138,14 @@ def comment(chapterid, comment_text, sess, oneshot=False, email="", name=""):
         "x-newrelic-id": "VQcCWV9RGwIJVFFRAw==",
         "x-csrf-token": sess.authenticity_token
     }
+    
+    data = {}
+    if oneshot:
+        data["work_id"] = str(chapterid)
+    else:
+        data["chapter_id"] = str(chapterid)
+    if commentid is not None:
+        data["comment_id"] = commentid
         
     if sess.is_authed:
         if oneshot:
@@ -159,37 +168,29 @@ def comment(chapterid, comment_text, sess, oneshot=False, email="", name=""):
         if pseud_id is None:
             raise PseudError("Couldn't find your pseud's id")
             
-        data = {
+        data.update({
             "authenticity_token": sess.authenticity_token,
             "comment[pseud_id]": pseud_id,
             "comment[comment_content]": comment_text,
-        }
-        
-        if oneshot:
-            data["work_id"] = str(chapterid)
-        else:
-            data["chapter_id"] = str(chapterid)
+        })
+            
     else:
         if email == "" or name == "":
             raise ValueError("You need to specify both an email and a name!")
         
-        data = {
+        data.update({
             "authenticity_token": sess.authenticity_token,
             "comment[email]": email,
             "comment[name]": name,
             "comment[comment_content]": comment_text,
-        }
-        if oneshot:
-            data["work_id"] = str(chapterid)
-        else:
-            data["chapter_id"] = str(chapterid)
+        })
 
     response = sess.post(f"https://archiveofourown.org/comments.js", headers=headers, data=data)
     if response.status_code == 404:
         if len(response.content) > 0:
             return response
         else:
-            raise InvalidWorkidError(f"Invalid {'workid' if oneshot else 'chapterid'}")
+            raise InvalidIdError(f"Invalid {'workid' if oneshot else 'chapterid'}")
     
     if response.status_code == 422:
         json = response.json()
@@ -201,6 +202,41 @@ def comment(chapterid, comment_text, sess, oneshot=False, email="", name=""):
         raise DuplicateCommentError("You have already left this comment here")
 
     raise UnexpectedResponseError(f"Unexpected HTTP status code received ({response.status_code})")
+
+def delete_comment(commentid, session):
+    """Deletes the specified comment
+
+    Args:
+        commentid (int/str): Comment id
+        session (AO3.Session): Session object
+
+    Raises:
+        PermissionError: You don't have permission to delete the comment
+        utils.AuthError: Invalid auth token
+        utils.UnexpectedResponseError: Unknown error
+    """
+    
+    if not session.is_authed:
+        raise PermissionError("You don't have permission to do this")
+    
+    data = {
+        "authenticity_token": session.authenticity_token,
+        "_method": "delete"
+    }
+    
+    req = session.post(f"https://archiveofourown.org/comments/{commentid}", data=data, allow_redirects=False)
+    if req.status_code == 302:
+        return
+    else:
+        soup = BeautifulSoup(req.content, "html.parser")
+        if "auth error" in soup.title.getText().lower():
+            raise AuthError("Invalid authentication token. Try calling session.refresh_auth_token()")
+        else:
+            error = soup.find("div", {"id": "main"}).getText()
+            if "you don't have permission" in error.lower():
+                raise PermissionError("You don't have permission to do this")
+    raise UnexpectedResponseError("An unexpected error has occurred")
+            
     
 def kudos(workid, session):
     """Leave a 'kudos' in a specific work
@@ -210,7 +246,7 @@ def kudos(workid, session):
 
     Raises:
         utils.UnexpectedResponseError: Unexpected response received
-        utils.InvalidWorkidError: Invalid workid (work doesn't exist)
+        utils.InvalidIdError: Invalid workid (work doesn't exist)
         utils.AuthError: Invalid authenticity token
 
     Returns:
@@ -239,7 +275,7 @@ def kudos(workid, session):
             elif "user_id" in json["errors"] or "ip_address" in json["errors"]:
                 return False  # User has already left kudos
             elif "no_commentable" in json["errors"]:
-                raise InvalidWorkidError("Invalid workid")
+                raise InvalidIdError("Invalid workid")
         raise UnexpectedResponseError(f"Unexpected json received:\n"+str(json))
     else:
         raise UnexpectedResponseError(f"Unexpected HTTP status code received ({response.status_code})")
