@@ -24,6 +24,28 @@ class Comment:
         self.oneshot = oneshot
         self._cache = {}
         
+    def get_author(self, refresh=False):
+        """Returns the author's name, and caches it.
+
+        Args:
+            refresh (bool, optional): True to update cache. Defaults to False.
+
+        Returns:
+            str: Author's name
+        """
+        
+        if "author" in self._cache and not refresh:
+            return self._cache["author"]
+        else:
+            req = requests.get(f"https://archiveofourown.org/comments/{self.comment_id}")
+            if req.status_code == 429:
+                raise utils.HTTPError("We are being rate-limited. Try again in a while or reduce the number of requests")
+            soup = BeautifulSoup(req.content, features="html.parser")
+            thread = soup.find("ol", {"class": "thread"})
+            first = thread.find("li", {"id": f"comment_{self.comment_id}"})
+            self._cache["author"] = first.a.getText()
+            return self._cache["author"]
+        
     def get_text(self, refresh=False):
         """Returns the chapter text, and caches it.
 
@@ -65,10 +87,12 @@ class Comment:
                 if parent is not None:
                     c.reply_id = parent.comment_id
                     c._cache["comment_text"] = comment.blockquote.getText()
+                    c._cache["author"] = comment.a.getText()
                     l.append(c)
                 else:
                     c.reply_id = self.comment_id
                     l[0]._cache["comment_text"] = comment.blockquote.getText()
+                    l[0]._cache["author"] = comment.a.getText()
             else:
                 self._get_thread(l[-1], comment.ol)
         if parent is not None:
