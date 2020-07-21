@@ -11,6 +11,7 @@ class GuestSession:
     def __init__(self):
         self.is_authed = False
         self.authenticity_token = None
+        self.username = ""
         self.session = requests.Session()
         
     def comment(self, chapterid, comment_text, oneshot=False):
@@ -28,7 +29,7 @@ class GuestSession:
             requests.models.Response: Response object
         """
         
-        return utils.comment(chapterid, comment_text, oneshot, self.session)
+        return utils.comment(chapterid, comment_text, self, oneshot)
     
         
     def kudos(self, workid):
@@ -48,7 +49,10 @@ class GuestSession:
         return utils.kudos(workid, self)
         
     def refresh_auth_token(self):
-        req = self.session.get("https://archiveofourown.org")
+        if self.is_authed:
+            req = self.session.get(f"https://archiveofourown.org/users/{self.username}")
+        else:
+            req = self.session.get("https://archiveofourown.org")
         soup = BeautifulSoup(req.content, "html.parser")
         token = soup.find("input", {"name": "authenticity_token"})
         if token is None:

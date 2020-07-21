@@ -225,9 +225,9 @@ def kudos(workid, session):
     headers = {
         "x-csrf-token": session.authenticity_token,
         "x-requested-with": "XMLHttpRequest",
-        "x-newrelic-id": "VQcCWV9RGwIJVFFRAw=="
+        "referer": "https://archiveofourown.org/work/{workid}"
     }
-    response = session.post(f"https://archiveofourown.org/kudos.js", headers=headers, data=data)
+    response = session.post("https://archiveofourown.org/kudos.js", headers=headers, data=data)
     
     if response.status_code == 201:
         return True  # Success
