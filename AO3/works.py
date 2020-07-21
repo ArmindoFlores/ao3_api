@@ -13,23 +13,24 @@ class Work:
     AO3 work object
     """
 
-    def __init__(self, workid):
+    def __init__(self, workid, session=None):
         """Creates a new AO3 work object
 
         Args:
             workid (int): AO3 work ID
+            session (AO3.Session, optional): Used to access restricted works
 
         Raises:
-            requests.HTTPError: Raised if the work wasn't found
+            utils.InvalidIdError: Raised if the work wasn't found
         """
 
+        self._session = session
         self.chapter_ids = []
         self.chapter_names = []
         self.workid = workid
         self.soup = self.request("https://archiveofourown.org/works/%i?view_adult=true"%workid)
         if "Error 404" in self.soup.text:
-            raise requests.HTTPError("Error 404: cannot find work")
-        
+            raise utils.InvalidIdError("Cannot find work")
 
     def get_chapter_text(self, chapter):
         """Gets the chapter text from the specified chapter.
@@ -59,7 +60,7 @@ class Work:
         else:
             raise utils.UnloadedError("Work.load_chapters() must be called first")
     
-    def load_chapters(self):
+    def load_chapters(self, session=None):
         """
         Loads the urls for all chapters
         """
@@ -67,6 +68,8 @@ class Work:
         if not self.oneshot:
             navigate = self.request("https://archiveofourown.org/works/%i/navigate?view_adult=true"%self.workid)
             all_chapters = navigate.find("ol", {'class': 'chapter index group'})
+            if all_chapters is None:
+                raise utils.AuthError("This work is only available to registered users of the Archive")
             self.chapter_ids = []
             self.chapter_names = []
             for chapter in all_chapters.findAll("li"):
@@ -102,12 +105,29 @@ class Work:
                 return req.content
         raise utils.UnexpectedResponseError(f"Filetype '{filetype}' is not available for download")
     
-    def get_comments(self, chapter=None):
+    def get_comments(self, chapter=None, maximum=None):
+        """Returns a list of all threads of comments in the specified chapter. This operation can take a very long time.
+        Because of that, it is recomended that you set a maximum number of comments. 
+        Duration: ~ (0.13 * n_comments) seconds or 2.9 seconds per comment page
+
+        Args:
+            chapter (int/str, optional): Chapter number, only required if work is not a oneshot. Defaults to None.
+            maximum (int, optional): Maximum number of comments to be returned. None -> No maximum
+
+        Raises:
+            ValueError: Invalid chapter number
+            IndexError: Invalid chapter number
+            utils.UnloadedError: Work.load_chapters() must be called first
+
+        Returns:
+            list: List of comments
+        """
+        
         if self.oneshot:
             chapter_id = self.workid
         else:
             if chapter is None:
-                raise ValueError("chapter cannot be 'None'")
+                raise IndexError("chapter cannot be 'None'")
             if chapter <= 0 or chapter >= self.chapters:
                 raise IndexError("Invalid chapter number")
             if len(self.chapter_ids) != self.chapters:
@@ -123,8 +143,7 @@ class Work:
         ol = div.find("ol", {"class": "pagination actions"})
         for li in ol.findAll("li"):
             if li.getText().isdigit():
-                pages = int(li.getText())
-                
+                pages = int(li.getText())   
         
         comments = []
         for page in range(pages):
@@ -132,6 +151,8 @@ class Work:
                 soup = self.request(url%(page+1))
             ol = soup.find("ol", {"class": "thread"})
             for li in ol.findAll("li", {"role": "article"}, recursive=False):
+                if maximum is not None and len(comments) >= maximum:
+                    return comments
                 id_ = int(li.attrs["id"][8:])
                 comments.append(Comment(id_, chapter_id))
         return comments
@@ -462,8 +483,7 @@ class Work:
 
         return "https://archiveofourown.org/works/%i"%self.workid      
 
-    @staticmethod
-    def request(url):
+    def request(self, url):
         """Request a web page and return a BeautifulSoup object.
 
         Args:
@@ -474,7 +494,10 @@ class Work:
             bs4.BeautifulSoup: BeautifulSoup object representing the requested page's html
         """
 
-        req = requests.get(url)
+        if self._session is None:
+            req = requests.get(url)
+        else:
+            req = self._session.session.get(url)
         if req.status_code == 429:
             raise utils.HTTPError("We are being rate-limited. Try again in a while or reduce the number of requests")
         content = req.content
