@@ -5,7 +5,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from . import utils
-from .comment import Comment
+from .comments import Comment
 
 
 class Work:
