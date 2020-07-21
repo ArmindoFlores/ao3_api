@@ -45,8 +45,10 @@ class User:
             int: Number of works
         """
 
-        n = self.soup_works.find("h2", {'class': 'heading'}).string.strip().split(" ")[0]
-        return int(n)
+        div = self.soup_works.find("div", {'id': 'inner'})
+        span = div.find("span", {'class': 'current'}).getText().replace("(", "").replace(")", "")
+        n = span.split(" ")[1]
+        return int(self.str_format(n))   
 
     @cached_property
     def npages(self):
