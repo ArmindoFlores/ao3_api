@@ -237,7 +237,7 @@ def delete_comment(commentid, session):
     if req.status_code == 302:
         return
     else:
-        soup = BeautifulSoup(req.content, "html.parser")
+        soup = BeautifulSoup(req.content, "lxml")
         if "auth error" in soup.title.getText().lower():
             raise AuthError("Invalid authentication token. Try calling session.refresh_auth_token()")
         else:

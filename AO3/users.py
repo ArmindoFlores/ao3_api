@@ -116,7 +116,7 @@ class User:
         if req.status_code == 429:
             raise utils.HTTPError("We are being rate-limited. Try again in a while or reduce the number of requests")
         content = req.content
-        soup = BeautifulSoup(content, "html.parser")
+        soup = BeautifulSoup(content, "lxml")
         return soup
 
     @staticmethod

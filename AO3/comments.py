@@ -40,7 +40,7 @@ class Comment:
             req = requests.get(f"https://archiveofourown.org/comments/{self.comment_id}")
             if req.status_code == 429:
                 raise utils.HTTPError("We are being rate-limited. Try again in a while or reduce the number of requests")
-            soup = BeautifulSoup(req.content, features="html.parser")
+            soup = BeautifulSoup(req.content, features="lxml")
             thread = soup.find("ol", {"class": "thread"})
             first = thread.find("li", {"id": f"comment_{self.comment_id}"})
             self._cache["author"] = first.a.getText()
@@ -62,7 +62,7 @@ class Comment:
             req = requests.get(f"https://archiveofourown.org/comments/{self.comment_id}")
             if req.status_code == 429:
                 raise utils.HTTPError("We are being rate-limited. Try again in a while or reduce the number of requests")
-            soup = BeautifulSoup(req.content, features="html.parser")
+            soup = BeautifulSoup(req.content, features="lxml")
             thread = soup.find("ol", {"class": "thread"})
             first = thread.find("li", {"id": f"comment_{self.comment_id}"})
             text = first.blockquote.getText()
@@ -135,7 +135,7 @@ class Comment:
                 raise utils.HTTPError("We are being rate-limited. Try again in a while or reduce the number of requests")
             if req.status_code == 404:
                 raise utils.InvalidIdError("Invalid comment id")
-            soup = BeautifulSoup(req.content, features="html.parser")
+            soup = BeautifulSoup(req.content, features="lxml")
             thread = soup.find("ol", {"class": "thread"})
             if thread is None:
                 self._cache["thread"] = []

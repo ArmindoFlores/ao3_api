@@ -12,7 +12,8 @@ setuptools.setup(
     download_url="https://github.com/ArmindoFlores/ao3_api/archive/ao3_api_v_1.2.0.tar.gz",
     install_requires=[
         "BeautifulSoup4",
-        "requests"  
+        "requests",
+        "lxml"
     ],
     long_description=long_description,
     long_description_content_type="text/markdown",
