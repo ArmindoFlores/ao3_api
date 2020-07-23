@@ -1,5 +1,6 @@
 site_name: AO3 API
 docs_dir: docs
+theme: readthedocs
 
 nav:
     - Home: index.md

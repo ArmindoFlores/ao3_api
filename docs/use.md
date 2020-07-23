@@ -1,6 +1,6 @@
 # Usage
 
-This package is divided in 6 core modules: works, users, search, session, comments, and utils.
+This package is divided in 7 core modules: works, users, search, session, comments, extra, and utils.
 
 ## Works
 
@@ -184,3 +184,9 @@ Replies: 2
 ```
 
 Loading comments takes a very long time so you should try and use it as little as possible. It also causes lots of requests to be sent to the AO3 servers, which might result in getting the error `utils.HTTPError: We are being rate-limited. Try again in a while or reduce the number of requests`. If it happens, you should try to space out your requests or reduce their number.
+
+
+## Extra
+
+AO3.extra contains the the code to download some extra resources that are not core to the functionality of this package and don't change very often. One example would be the list of fandoms recognized by AO3.
+To download a resource, simply use `AO3.extra.download(resource_name)`. To download every resource, you can use `AO3.extra.download_all()`. To see the list of available resources, `AO3.extra.get_resources()` will help you.

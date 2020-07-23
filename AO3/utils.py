@@ -100,6 +100,12 @@ class Constraint:
         return self.string
     
 def load_fandoms():
+    """Loads fandoms into memory
+
+    Raises:
+        FileNotFoundError: No resource was found
+    """
+    
     global _FANDOMS
     
     fandom_path = os.path.join(os.path.dirname(__file__), "resources", "fandoms")
@@ -112,6 +118,19 @@ def load_fandoms():
             _FANDOMS += pickle.load(f)
 
 def search_fandom(fandom_string):
+    """Searches for a fandom that matches the given string
+
+    Args:
+        fandom_string (str): query string
+
+    Raises:
+        UnloadedError: load_fandoms() wasn't called
+        UnloadedError: No resources were downloaded
+
+    Returns:
+        list: All results matching 'fandom_string'
+    """
+    
     if _FANDOMS is None:
         raise UnloadedError("Did you forget to call AO3.utils.load_fandoms()?")
     if _FANDOMS == []:
