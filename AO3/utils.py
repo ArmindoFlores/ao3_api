@@ -1,5 +1,10 @@
+import os
+import pickle
+
 import requests
 from bs4 import BeautifulSoup
+
+_FANDOMS = None
 
 
 class LoginError(Exception):
@@ -47,7 +52,6 @@ class HTTPError(Exception):
         super().__init__(message)
         self.errors = errors
 
-
 class Query:
     def __init__(self):
         self.fields = []
@@ -94,8 +98,30 @@ class Constraint:
 
     def __str__(self):
         return self.string
-        
+    
+def load_fandoms():
+    global _FANDOMS
+    
+    fandom_path = os.path.join(os.path.dirname(__file__), "resources", "fandoms")
+    if not os.path.isdir(fandom_path):
+        raise FileNotFoundError("No fandom resources have been downloaded. Try AO3.extra.download()")
+    files = os.listdir(fandom_path)
+    _FANDOMS = []
+    for file in files:
+        with open(os.path.join(fandom_path, file), "rb") as f:
+            _FANDOMS += pickle.load(f)
 
+def search_fandom(fandom_string):
+    if _FANDOMS is None:
+        raise UnloadedError("Did you forget to call AO3.utils.load_fandoms()?")
+    if _FANDOMS == []:
+        raise UnloadedError("Did you forget to download the required resources with AO3.extra.download()?")
+    results = []
+    for fandom in _FANDOMS:
+        if fandom_string.lower() in fandom.lower():
+            results.append(fandom)
+    return results
+        
 def workid_from_url(url):
     """Get the workid from an archiveofourown.org website url
 
