@@ -1,5 +1,6 @@
 import functools
 import os
+import pathlib
 import pickle
 
 import requests
@@ -30,8 +31,8 @@ def _download_fandom(fandom_key, name):
         raise utils.UnexpectedResponseError("Couldn't download the desired resource. Do you have the latest version of ao3-api?")
     print(f"Download complete ({len(fandoms)} fandoms)")
  
-    
-_RESOURCES = {
+
+_FANDOM_RESOURCES = {
     "anime_manga_fandoms": functools.partial(
         _download_fandom, 
         "Anime%20*a*%20Manga", 
@@ -78,6 +79,8 @@ _RESOURCES = {
         "uncategorized_fandoms")
 }
 
+_RESOURCE_DICTS = [("fandoms", _FANDOM_RESOURCES)]
+
 
 def download(resource):
     """Downloads the specified resource
@@ -89,6 +92,30 @@ def download(resource):
         KeyError: Invalid resource
     """
     
-    if resource not in _RESOURCES:
-        raise KeyError(f"'{resource}' is not a valid resource")
-    _RESOURCES[resource]()
+    for _, resource_dict in _RESOURCE_DICTS:
+        if resource in resource_dict:
+            resource_dict[resource]()
+            return
+    raise KeyError(f"'{resource}' is not a valid resource")
+
+def get_resources():
+    """Returns a list of every resource available for download"""
+    
+    d = {}
+    for name, resource_dict in _RESOURCE_DICTS:
+        d[name] = list(resource_dict.keys())
+    return d
+
+def has_resource(resource):
+    """Returns True if resource was already download, False otherwise"""
+    path = os.path.join(os.path.dirname(__file__), "resources")
+    return len(list(pathlib.Path(path).rglob(resource+".pkl"))) > 0
+
+def download_all(redownload=False):
+    """Downloads every available resource"""
+    
+    types = get_resources()
+    for rsrc_type in types:
+        for rsrc in types[rsrc_type]:
+            if redownload or not has_resource(rsrc):
+                download(rsrc)
