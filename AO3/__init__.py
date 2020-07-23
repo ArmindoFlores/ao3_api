@@ -1,8 +1,8 @@
-from .users import User
-from .session import Session, GuestSession
-from .works import Work
-from .search import Search
+from . import extra, utils
 from .comments import Comment
-from . import utils
+from .search import Search
+from .session import GuestSession, Session
+from .users import User
+from .works import Work
 
 VERSION = "1.2.2"
