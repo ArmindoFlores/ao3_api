@@ -19,7 +19,9 @@ class Search:
         hits=None,
         bookmarks=None,
         comments=None,
+        completion_status=None,
         page=1):
+        
         self.any_field = any_field
         self.title = title
         self.author = author
@@ -30,7 +32,9 @@ class Search:
         self.hits = hits
         self.bookmarks = bookmarks
         self.comments = comments
+        self.completion_status = completion_status
         self.page = page
+        
         self.results = None
         self.pages = 0
         self.total_results = 0
@@ -42,7 +46,7 @@ class Search:
         soup = search(
             self.any_field, self.title, self.author, self.single_chapter,
             self.word_count, self.language, self.fandoms, self.hits,
-            self.bookmarks, self.comments, self.page)
+            self.bookmarks, self.comments, self.completion_status, self.page)
 
         results = soup.find("ol", {'class': 'work index group'})
         works = []
@@ -74,6 +78,7 @@ def search(
     hits=None,
     bookmarks=None,
     comments=None,
+    completion_status=None,
     page=1):
     """Returns the results page for the search as a Soup object
 
@@ -114,7 +119,9 @@ def search(
     if bookmarks is not None:
         query.add_field(f"work_search[bookmarks_count]={bookmarks}")
     if comments is not None:
-        query.add_field(f"work_search[comments_count]={comments}")        
+        query.add_field(f"work_search[comments_count]={comments}")   
+    if completion_status is not None:
+        query.add_field(f"work_search[complete]={'T' if completion_status else 'F'}")     
     
     url = f"https://archiveofourown.org/works/search?{query.string}"
     

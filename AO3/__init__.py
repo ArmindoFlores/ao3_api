@@ -5,4 +5,4 @@ from .search import Search
 from .comments import Comment
 from . import utils
 
-VERSION = "1.2.1"
+VERSION = "1.2.2"
