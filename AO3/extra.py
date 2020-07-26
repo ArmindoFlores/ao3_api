@@ -9,6 +9,32 @@ from bs4 import BeautifulSoup
 from . import utils
 
 
+def _download_languages():
+    path = os.path.dirname(__file__)
+    languages = []
+    try:
+        rsrc_path = os.path.join(path, "resources")
+        if not os.path.isdir(rsrc_path):
+            os.mkdir(rsrc_path)
+        language_path = os.path.join(rsrc_path, "languages")
+        if not os.path.isdir(language_path):
+            os.mkdir(language_path)
+        url = "https://archiveofourown.org/languages"
+        print(f"Downloading from {url}")
+        req = requests.get(url)
+        soup = BeautifulSoup(req.content, "lxml")
+        for dt in soup.find("dl", {"class": "language index group"}).findAll("dt"):
+            if dt.a is not None: 
+                alias = dt.a.attrs["href"].split("/")[-1]
+            else:
+                alias = None
+            languages.append((dt.getText(), alias))
+        with open(f"{os.path.join(language_path, 'languages')}.pkl", "wb") as file:
+            pickle.dump(languages, file)
+    except AttributeError:
+        raise utils.UnexpectedResponseError("Couldn't download the desired resource. Do you have the latest version of ao3-api?")
+    print(f"Download complete ({len(languages)} languages)")
+
 def _download_fandom(fandom_key, name):
     path = os.path.dirname(__file__)
     fandoms = []
@@ -79,7 +105,12 @@ _FANDOM_RESOURCES = {
         "uncategorized_fandoms")
 }
 
-_RESOURCE_DICTS = [("fandoms", _FANDOM_RESOURCES)]
+_LANGUAGE_RESOURCES = {
+    "languages": _download_languages
+}
+
+_RESOURCE_DICTS = [("fandoms", _FANDOM_RESOURCES),
+                   ("languages", _LANGUAGE_RESOURCES)]
 
 
 def download(resource):

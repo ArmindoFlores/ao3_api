@@ -5,7 +5,7 @@ import requests
 from bs4 import BeautifulSoup
 
 _FANDOMS = None
-
+_LANGUAGES = None
 
 class LoginError(Exception):
     def __init__(self, message, errors=[]):
@@ -116,6 +116,28 @@ def load_fandoms():
     for file in files:
         with open(os.path.join(fandom_path, file), "rb") as f:
             _FANDOMS += pickle.load(f)
+            
+def load_languages():
+    """Loads languages into memory
+
+    Raises:
+        FileNotFoundError: No resource was found
+    """
+    
+    global _LANGUAGES
+    
+    language_path = os.path.join(os.path.dirname(__file__), "resources", "languages")
+    if not os.path.isdir(language_path):
+        raise FileNotFoundError("No language resources have been downloaded. Try AO3.extra.download()")
+    files = os.listdir(language_path)
+    _LANGUAGES = []
+    for file in files:
+        with open(os.path.join(language_path, file), "rb") as f:
+            _LANGUAGES += pickle.load(f)
+            
+def get_languages():
+    """Returns all available languages"""
+    return _LANGUAGES[:]
 
 def search_fandom(fandom_string):
     """Searches for a fandom that matches the given string
