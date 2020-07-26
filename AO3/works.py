@@ -31,6 +31,15 @@ class Work:
         self.soup = self.request("https://archiveofourown.org/works/%i?view_adult=true"%workid)
         if "Error 404" in self.soup.text:
             raise utils.InvalidIdError("Cannot find work")
+        
+    def set_session(self, session):
+        """Sets the session used to make requests for this work
+
+        Args:
+            session (AO3.Session/AO3.GuestSession): session object
+        """
+        
+        self._session = session 
 
     def get_chapter_text(self, chapter):
         """Gets the chapter text from the specified chapter.
@@ -60,7 +69,7 @@ class Work:
         else:
             raise utils.UnloadedError("Work.load_chapters() must be called first")
     
-    def load_chapters(self, session=None):
+    def load_chapters(self):
         """
         Loads the urls for all chapters
         """
@@ -160,38 +169,39 @@ class Work:
                 comments.append(Comment(id_, chapter_id))
         return comments
     
-    def leave_kudos(self, session):
+    def leave_kudos(self):
         """Leave a 'kudos' in this work
-
-        Args:
-            session (AO3.Session/AO3.GuestSession): session object
 
         Raises:
             utils.UnexpectedResponseError: Unexpected response received
             utils.InvalidIdError: Invalid workid (work doesn't exist)
-            utils.AuthError: Invalid authenticity token
+            utils.AuthError: Invalid session or authenticity token
 
         Returns:
             bool: True if successful, False if you already left kudos there
         """
-        
-        return utils.kudos(self.workid, session)
+        if self._session is None:
+            raise utils.AuthError("Invalid session")
+        return utils.kudos(self.workid, self._session)
     
-    def comment(self, chapter, comment_text, session, email="", name=""):
+    def comment(self, chapter, comment_text, email="", name=""):
         """Leaves a comment on this work
 
         Args:
             chapter (int): Chapter number
             comment_text (str): Comment text
-            session (AO3.Session, optional): Session object. Defaults to None (posts anonimously).
 
         Raises:
             IndexError: Invalid chapter number
             utils.UnloadedError: Couldn't load chapter ids. Call Work.load_chapters() first
+            utils.AuthError: Invalid session
 
         Returns:
             requests.models.Response: Response object
         """
+        
+        if self._session is None:
+            raise utils.AuthError("Invalid session")
         
         if chapter < 1 or chapter > self.chapters:
             raise IndexError(f"Invalid chapter number")
@@ -204,7 +214,7 @@ class Work:
         else:
             chapterid = self.chapter_ids[chapter-1]
             
-        return utils.comment(chapterid, comment_text, self.oneshot, email=email, name=name)
+        return utils.comment(chapterid, comment_text, self._session, self.oneshot, email=email, name=name)
     
     @property
     def oneshot(self):
