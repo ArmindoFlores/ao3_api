@@ -29,7 +29,7 @@ class Work:
         self.chapter_ids = []
         self.chapter_names = []
         self.workid = workid
-        self.soup = None
+        self._soup = None
         if load:
             self.reload()
         
@@ -45,8 +45,8 @@ class Work:
                 if attr in self.__dict__:
                     delattr(self, attr)
         
-        self.soup = self.request("https://archiveofourown.org/works/%i?view_adult=true"%self.workid)
-        if "Error 404" in self.soup.text:
+        self._soup = self.request("https://archiveofourown.org/works/%i?view_adult=true"%self.workid)
+        if "Error 404" in self._soup.text:
             raise utils.InvalidIdError("Cannot find work")
         self.load_chapters()
         
@@ -84,7 +84,7 @@ class Work:
                 raise utils.UnloadedError("Work.load_chapters() must be called first")
 
         elif chapter == 1:
-            div = self.soup.find("div", {'role': 'article'})
+            div = self._soup.find("div", {'role': 'article'})
             return str(BeautifulSoup.getText(div))
         else:
             raise utils.UnloadedError("Work.load_chapters() must be called first")
@@ -129,7 +129,7 @@ class Work:
         
         if not self.loaded:
             raise utils.UnloadedError("Work isn't loaded. Have you tried calling Work.reload()?")
-        download_btn = self.soup.find("li", {"class": "download"})
+        download_btn = self._soup.find("li", {"class": "download"})
         for download_type in download_btn.findAll("li"):
             if download_type.a.getText() == filetype.upper():
                 url = f"https://archiveofourown.org/{download_type.a.attrs['href']}"
@@ -216,6 +216,58 @@ class Work:
         return comments
     
     @threadable.threadable
+    def subscribe(self):
+        """Subscribes to this work.
+        This function is threadable.
+
+        Raises:
+            utils.AuthError: Invalid session
+        """
+        
+        if self._session is None or not self._session.is_authed:
+            raise utils.AuthError("You can only subscribe to a work using an authenticated session")
+        
+        utils.subscribe(self.workid, "Work", self._session)
+        
+    @threadable.threadable
+    def unsubscribe(self):
+        """Unubscribes from this user.
+        This function is threadable.
+
+        Raises:
+            utils.AuthError: Invalid session
+        """
+        
+        if not self.is_subscribed:
+            raise Exception("You are not subscribed to this work")
+        if self._session is None or not self._session.is_authed:
+            raise utils.AuthError("You can only unsubscribe from a work using an authenticated session")
+        
+        utils.subscribe(self.workid, "Work", self._session, True, self.sub_id)
+        
+    @cached_property
+    def is_subscribed(self):
+        """True if you're subscribed to this work"""
+        
+        if self._session is None or not self._session.is_authed:
+            raise utils.AuthError("You can only get a user ID using an authenticated session")
+        
+        ul = self._soup.find("ul", {"class": "work navigation actions"})
+        input_ = ul.find("li", {"class": "subscribe"}).find("input", {"name": "commit", "value": "Unsubscribe"})
+        return input_ is not None
+    
+    @cached_property
+    def sub_id(self):
+        """Returns the subscription ID. Used for unsubscribing"""
+        
+        if self._session is None or not self._session.is_authed:
+            raise utils.AuthError("You can only get a user ID using an authenticated session")
+        
+        ul = self._soup.find("ul", {"class": "work navigation actions"})
+        id_ = ul.find("li", {"class": "subscribe"}).form.attrs["action"].split("/")[-1]
+        return int(id_)
+    
+    @threadable.threadable
     def leave_kudos(self):
         """Leave a 'kudos' in this work.
         This function is threadable.
@@ -273,7 +325,7 @@ class Work:
     @property
     def loaded(self):
         """Returns True if this work has been loaded"""
-        return self.soup is not None
+        return self._soup is not None
     
     @property
     def oneshot(self):
@@ -288,7 +340,7 @@ class Work:
             list: list of authors
         """
 
-        authors = self.soup.find_all("a", {'rel': 'author'})
+        authors = self._soup.find_all("a", {'rel': 'author'})
         author_list = []
         if authors is not None:
             for author in authors:
@@ -304,7 +356,7 @@ class Work:
             int: number of chapters
         """
         
-        chapters = self.soup.find("dd", {'class': 'chapters'})
+        chapters = self._soup.find("dd", {'class': 'chapters'})
         if chapters is not None:
             return int(self.str_format(chapters.string.split("/")[0]))
         return 0
@@ -317,7 +369,7 @@ class Work:
             int: number of hits
         """
 
-        hits = self.soup.find("dd", {'class': 'hits'})
+        hits = self._soup.find("dd", {'class': 'hits'})
         if hits is not None:
             return int(self.str_format(hits.string))
         return 0
@@ -330,7 +382,7 @@ class Work:
             int: number of kudos
         """
 
-        kudos = self.soup.find("dd", {'class': 'kudos'})
+        kudos = self._soup.find("dd", {'class': 'kudos'})
         if kudos is not None:
             return int(self.str_format(kudos.string))
         return 0
@@ -343,7 +395,7 @@ class Work:
             int: number of comments
         """
 
-        comments = self.soup.find("dd", {'class': 'comments'})
+        comments = self._soup.find("dd", {'class': 'comments'})
         if comments is not None:
             return int(self.str_format(comments.string))
         return 0
@@ -356,7 +408,7 @@ class Work:
             int: number of words
         """
 
-        words = self.soup.find("dd", {'class': 'words'})
+        words = self._soup.find("dd", {'class': 'words'})
         if words is not None:
             return int(self.str_format(words.string))
         return 0
@@ -369,7 +421,7 @@ class Work:
             str: Language
         """
 
-        language = self.soup.find("dd", {'class': 'language'})
+        language = self._soup.find("dd", {'class': 'language'})
         if language is not None:
             return language.string.strip()
         else:
@@ -383,7 +435,7 @@ class Work:
             int: number of bookmarks
         """
 
-        bookmarks = self.soup.find("dd", {'class': 'bookmarks'})
+        bookmarks = self._soup.find("dd", {'class': 'bookmarks'})
         if bookmarks is not None:
             return int(self.str_format(bookmarks.string))
         return 0
@@ -396,7 +448,7 @@ class Work:
             str: work title
         """
 
-        title = self.soup.find("div", {'class': 'preface group'})
+        title = self._soup.find("div", {'class': 'preface group'})
         if title is not None:
             return str(title.h2.string.strip())
         return ""
@@ -409,7 +461,7 @@ class Work:
             datetime.date: publish date
         """
 
-        dp = self.soup.find("dd", {'class': 'published'}).string
+        dp = self._soup.find("dd", {'class': 'published'}).string
         return date(*list(map(int, dp.split("-"))))
 
     @cached_property
@@ -421,7 +473,7 @@ class Work:
         """
 
         if self.chapters > 1:
-            du = self.soup.find("dd", {'class': 'status'}).string
+            du = self._soup.find("dd", {'class': 'status'}).string
             return date(*list(map(int, du.split("-"))))
         else:
             return self.date_published
@@ -434,7 +486,7 @@ class Work:
             list: List of tags
         """
 
-        html = self.soup.find("dd", {'class': 'freeform tags'})
+        html = self._soup.find("dd", {'class': 'freeform tags'})
         tags = []
         if html is not None:
             for tag in html.find_all("li"):
@@ -449,7 +501,7 @@ class Work:
             list: List of characters
         """
 
-        html = self.soup.find("dd", {'class': 'character tags'})
+        html = self._soup.find("dd", {'class': 'character tags'})
         characters = []
         if html is not None:
             for character in html.find_all("li"):
@@ -464,7 +516,7 @@ class Work:
             list: List of relationships
         """
         
-        html = self.soup.find("dd", {'class': 'relationship tags'})
+        html = self._soup.find("dd", {'class': 'relationship tags'})
         relationships = []
         if html is not None:
             for relationship in html.find_all("li"):
@@ -479,7 +531,7 @@ class Work:
             list: List of fandoms
         """
 
-        html = self.soup.find("dd", {'class': 'fandom tags'})
+        html = self._soup.find("dd", {'class': 'fandom tags'})
         fandoms = []
         if html is not None:
             for fandom in html.find_all("li"):
@@ -494,7 +546,7 @@ class Work:
             list: List of categories
         """
 
-        html = self.soup.find("dd", {'class': 'category tags'})
+        html = self._soup.find("dd", {'class': 'category tags'})
         categories = []
         if html is not None:
             for category in html.find_all("li"):
@@ -509,7 +561,7 @@ class Work:
             list: List of warnings
         """
 
-        html = self.soup.find("dd", {'class': 'warning tags'})
+        html = self._soup.find("dd", {'class': 'warning tags'})
         warnings = []
         if html is not None:
             for warning in html.find_all("li"):
@@ -524,7 +576,7 @@ class Work:
             str: Rating
         """
 
-        html = self.soup.find("dd", {'class': 'rating tags'})
+        html = self._soup.find("dd", {'class': 'rating tags'})
         if html is not None:
             rating = html.a.string
             return rating
@@ -538,7 +590,7 @@ class Work:
             str: Summary
         """
 
-        div = self.soup.find("div", {'class': 'preface group'})
+        div = self._soup.find("div", {'class': 'preface group'})
         if div is None:
             return ""
         html = div.find("blockquote", {'class': 'userstuff'})

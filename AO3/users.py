@@ -78,21 +78,21 @@ class User:
     @threadable.threadable
     def subscribe(self):
         """Subscribes to this user.
-        This is a threadable function.
+        This function is threadable.
 
         Raises:
             utils.AuthError: Invalid session
         """
         
         if self._session is None or not self._session.is_authed:
-            raise utils.AuthError("You can only get a user ID using an authenticated session")
+            raise utils.AuthError("You can only subscribe to a user using an authenticated session")
         
         utils.subscribe(self.user_id, "User", self._session)
         
     @threadable.threadable
     def unsubscribe(self):
         """Unubscribes from this user.
-        This is a threadable function.
+        This function is threadable.
 
         Raises:
             utils.AuthError: Invalid session
@@ -101,7 +101,7 @@ class User:
         if not self.is_subscribed:
             raise Exception("You are not subscribed to this user")
         if self._session is None or not self._session.is_authed:
-            raise utils.AuthError("You can only get a user ID using an authenticated session")
+            raise utils.AuthError("You can only unsubscribe from a user using an authenticated session")
         
         utils.subscribe(self.user_id, "User", self._session, True, self.sub_id)
         
