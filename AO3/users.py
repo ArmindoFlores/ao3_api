@@ -75,6 +75,47 @@ class User:
         img = requests.get(src).content
         return name, img
     
+    @threadable.threadable
+    def subscribe(self):
+        """Subscribes to this user.
+        This is a threadable function.
+
+        Raises:
+            utils.AuthError: Invalid session
+        """
+        
+        if self._session is None or not self._session.is_authed:
+            raise utils.AuthError("You can only get a user ID using an authenticated session")
+        
+        utils.subscribe(self.user_id, "User", self._session)
+        
+    @threadable.threadable
+    def unsubscribe(self):
+        """Unubscribes from this user.
+        This is a threadable function.
+
+        Raises:
+            utils.AuthError: Invalid session
+        """
+        
+        if not self.is_subscribed:
+            raise Exception("You are not subscribed to this user")
+        if self._session is None or not self._session.is_authed:
+            raise utils.AuthError("You can only get a user ID using an authenticated session")
+        
+        utils.subscribe(self.user_id, "User", self._session, True, self.sub_id)
+        
+    @cached_property
+    def is_subscribed(self):
+        """True if you're subscribed to this user"""
+        
+        if self._session is None or not self._session.is_authed:
+            raise utils.AuthError("You can only get a user ID using an authenticated session")
+        
+        header = self._soup_profile.find("div", {"class": "primary header module"})
+        input_ = header.find("input", {"name": "commit", "value": "Unsubscribe"})
+        return input_ is not None
+    
     @cached_property
     def user_id(self):
         if self._session is None or not self._session.is_authed:
@@ -85,6 +126,17 @@ class User:
         if input_ is None:
             raise utils.UnexpectedResponseError("Couldn't fetch user ID")
         return int(input_.attrs["value"])
+    
+    @cached_property
+    def sub_id(self):
+        """Returns the subscription ID. Used for unsubscribing"""
+        
+        if not self.is_subscribed:
+            raise Exception("You are not subscribed to this user")
+        
+        header = self._soup_profile.find("div", {"class": "primary header module"})
+        id_ = header.form.attrs["action"].split("/")[-1]
+        return int(id_)
 
     @cached_property
     def works(self):

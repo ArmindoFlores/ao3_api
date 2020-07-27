@@ -358,19 +358,23 @@ def kudos(workid, session):
     else:
         raise UnexpectedResponseError(f"Unexpected HTTP status code received ({response.status_code})")
     
-def subscribe(workid, worktype, session):
+def subscribe(workid, worktype, session, unsubscribe=False, subid=None):
     """Subscribes to a work. Be careful, you can subscribe to a work multiple times
 
     Args:
         workid (int/str): ID of the work
         worktype (str): Type of the work (Series/Work/User)
         session (AO3.Session): Session object
+        unsubscribe (bool, optional): Unsubscribe instead of subscribing. Defaults to False.
+        subid (str/int, optional): Subscription ID, used when unsubscribing. Defaults to None.
 
     Raises:
         AuthError: Invalid auth token
         AuthError: Invalid session
         InvalidIdError: Invalid workid / worktype
+        InvalidIdError: Invalid subid
     """
+    
     if not session.is_authed:
         raise AuthError("Invalid session")
     
@@ -379,9 +383,16 @@ def subscribe(workid, worktype, session):
         "subscription[subscribable_id]": workid,
         "subscription[subscribable_type]": worktype.capitalize()
     }
+
     url = f"https://archiveofourown.org/users/{session.username}/subscriptions"
-    req = session.post(url, data=data, allow_redirects=False)
-    
+    if unsubscribe:
+        if subid is None:
+            raise InvalidIdError("When unsubscribing, subid cannot be None")
+        url += f"/{subid}"
+        data["_method"] = "delete"
+    req = session.session.post(url, data=data, allow_redirects=False)
+    if unsubscribe:
+        return req
     if req.status_code == 302:
         if req.headers["Location"] == "https://archiveofourown.org/auth_error":
             raise AuthError("Invalid authentication token. Try calling session.refresh_auth_token()")

@@ -6,8 +6,7 @@ import pickle
 import requests
 from bs4 import BeautifulSoup
 
-from . import utils
-from . import threadable
+from . import threadable, utils
 
 
 def _download_languages():
@@ -168,5 +167,3 @@ def download_all_threaded(redownload=False):
                 threads.append(download(rsrc, threaded=True))
     for thread in threads:
         thread.join()
-    
-
