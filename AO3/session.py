@@ -1,6 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
-from . import utils
+
+from . import threadable, utils
 
 
 class GuestSession:
@@ -14,7 +15,7 @@ class GuestSession:
         self.username = ""
         self.session = requests.Session()
     
-    @utils.threadable
+    @threadable.threadable
     def comment(self, chapterid, comment_text, oneshot=False, commentid=None):
         """Leaves a comment on a specific work
 
@@ -39,7 +40,7 @@ class GuestSession:
         return response
     
     
-    @utils.threadable
+    @threadable.threadable
     def kudos(self, workid):
         """Leave a 'kudos' in a specific work
 

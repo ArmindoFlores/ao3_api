@@ -1,7 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 
-from . import utils
+from . import threadable, utils
 
 
 class Comment:
@@ -189,7 +189,7 @@ class Comment:
             raise ValueError("self.chapter_id cannot be 'None'")
         return utils.comment(self.chapter_id, comment_text, session, self.oneshot, self.comment_id, email, name)
     
-    @utils.threadable
+    @threadable.threadable
     def load(self, refresh=False):
         """Loads all comment properties
 

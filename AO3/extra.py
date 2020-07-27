@@ -7,6 +7,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from . import utils
+from . import threadable
 
 
 def _download_languages():
@@ -112,7 +113,7 @@ _LANGUAGE_RESOURCES = {
 _RESOURCE_DICTS = [("fandoms", _FANDOM_RESOURCES),
                    ("languages", _LANGUAGE_RESOURCES)]
 
-@utils.threadable
+@threadable.threadable
 def download(resource):
     """Downloads the specified resource
 
@@ -142,7 +143,7 @@ def has_resource(resource):
     path = os.path.join(os.path.dirname(__file__), "resources")
     return len(list(pathlib.Path(path).rglob(resource+".pkl"))) > 0
 
-@utils.threadable
+@threadable.threadable
 def download_all(redownload=False):
     """Downloads every available resource"""
     
@@ -152,7 +153,7 @@ def download_all(redownload=False):
             if redownload or not has_resource(rsrc):
                 download(rsrc)
 
-@utils.threadable    
+@threadable.threadable    
 def download_all_threaded(redownload=False):
     """Downloads every available resource in parallel (about ~3.7x faster)"""
     

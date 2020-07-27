@@ -4,7 +4,7 @@ from functools import cached_property
 import requests
 from bs4 import BeautifulSoup
 
-from . import utils
+from . import threadable, utils
 from .comments import Comment
 
 
@@ -169,7 +169,7 @@ class Work:
                 comments.append(Comment(id_, chapter_id))
         return comments
     
-    @utils.threadable
+    @threadable.threadable
     def leave_kudos(self):
         """Leave a 'kudos' in this work
 
@@ -185,7 +185,7 @@ class Work:
             raise utils.AuthError("Invalid session")
         return utils.kudos(self.workid, self._session)
     
-    @utils.threadable
+    @threadable.threadable
     def comment(self, chapter, comment_text, email="", name=""):
         """Leaves a comment on this work
 
