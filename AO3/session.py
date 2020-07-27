@@ -17,7 +17,8 @@ class GuestSession:
     
     @threadable.threadable
     def comment(self, chapterid, comment_text, oneshot=False, commentid=None):
-        """Leaves a comment on a specific work
+        """Leaves a comment on a specific work.
+        This function is threadable.
 
         Args:
             chapterid (str/int): Chapter id
@@ -42,7 +43,8 @@ class GuestSession:
     
     @threadable.threadable
     def kudos(self, workid):
-        """Leave a 'kudos' in a specific work
+        """Leave a 'kudos' in a specific work.
+        This function is threadable.
 
         Args:
             workid (int/str): ID of the work
@@ -57,8 +59,10 @@ class GuestSession:
         
         return utils.kudos(workid, self)
         
+    @threadable.threadable
     def refresh_auth_token(self):
-        """Refreshes the authenticity token
+        """Refreshes the authenticity token.
+        This function is threadable.
 
         Raises:
             utils.UnexpectedResponseError: Couldn't refresh the token

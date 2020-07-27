@@ -35,7 +35,8 @@ class Work:
     @threadable.threadable
     def reload(self):
         """
-        Loads information about this work
+        Loads information about this work.
+        This function is threadable.
         """
         
         self.soup = self.request("https://archiveofourown.org/works/%i?view_adult=true"%self.workid)
@@ -193,7 +194,8 @@ class Work:
     
     @threadable.threadable
     def leave_kudos(self):
-        """Leave a 'kudos' in this work
+        """Leave a 'kudos' in this work.
+        This function is threadable.
 
         Raises:
             utils.UnexpectedResponseError: Unexpected response received
@@ -210,7 +212,8 @@ class Work:
     
     @threadable.threadable
     def comment(self, chapter, comment_text, email="", name=""):
-        """Leaves a comment on this work
+        """Leaves a comment on this work.
+        This function is threadable.
 
         Args:
             chapter (int): Chapter number

@@ -115,7 +115,8 @@ _RESOURCE_DICTS = [("fandoms", _FANDOM_RESOURCES),
 
 @threadable.threadable
 def download(resource):
-    """Downloads the specified resource
+    """Downloads the specified resource.
+    This function is threadable.
 
     Args:
         resource (str): Resource name
@@ -145,7 +146,8 @@ def has_resource(resource):
 
 @threadable.threadable
 def download_all(redownload=False):
-    """Downloads every available resource"""
+    """Downloads every available resource.
+    This function is threadable."""
     
     types = get_resources()
     for rsrc_type in types:
@@ -155,7 +157,8 @@ def download_all(redownload=False):
 
 @threadable.threadable    
 def download_all_threaded(redownload=False):
-    """Downloads every available resource in parallel (about ~3.7x faster)"""
+    """Downloads every available resource in parallel (about ~3.7x faster).
+    This function is threadable."""
     
     threads = []
     types = get_resources()

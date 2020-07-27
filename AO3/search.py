@@ -41,7 +41,8 @@ class Search:
 
     @threadable.threadable
     def update(self):
-        """Sends a request to the AO3 website with the defined search parameters, and updates all info
+        """Sends a request to the AO3 website with the defined search parameters, and updates all info.
+        This function is threadable.
         """
 
         soup = search(

@@ -164,14 +164,16 @@ class Comment:
                 self._cache["thread"] = []
                 return []
         
+    @threadable.threadable
     def reply(self, comment_text, session, email="", name=""):
-        """[summary]
+        """Replies to a comment.
+        This function is threadable.
 
         Args:
-            comment_text ([type]): [description]
-            session ([type]): [description]
-            email (str, optional): [description]. Defaults to "".
-            name (str, optional): [description]. Defaults to "".
+            comment_text (str): Comment text
+            session (AO3.Session/AO3.GuestSession): Session object
+            email (str, optional): Email. Defaults to "".
+            name (str, optional): Name. Defaults to "".
 
         Raises:
             utils.InvalidIdError: Invalid workid
@@ -192,14 +194,17 @@ class Comment:
     @threadable.threadable
     def load(self, refresh=False):
         """Loads all comment properties
+        This function is threadable.
 
         Args:
             refresh (bool, optional): True to update cache. Defaults to False.
         """
         self.get_thread(refresh)
     
+    @threadable.threadable
     def delete(self, session):
-        """Deletes this comment
+        """Deletes this comment.
+        This function is threadable.
 
         Args:
             session (AO3.Session): A session object
