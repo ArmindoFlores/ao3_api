@@ -1,3 +1,5 @@
+from functools import cached_property
+
 import requests
 from bs4 import BeautifulSoup
 
@@ -153,6 +155,12 @@ class Session(GuestSession):
 
         self._subscriptions_url = "https://archiveofourown.org/users/{0}/subscriptions?type=works&page={1:d}"
         self._bookmarks_url = "https://archiveofourown.org/users/{0}/bookmarks?page={1:d}"
+        
+    def clear_cache(self):
+        for attr in self.__class__.__dict__:
+            if isinstance(getattr(self.__class__, attr), cached_property):
+                if attr in self.__dict__:
+                    delattr(self, attr)
 
     def get_subscriptions(self, page=1):
         """Get the name of the first 20 work subscriptions. If there are more than 20, you may need to specify the page.
@@ -210,6 +218,7 @@ class Session(GuestSession):
             
         return bookms
 
+    @cached_property
     def get_n_bookmarks(self):
         """Get the number of your bookmarks.
         Must be logged in to use.

@@ -130,7 +130,7 @@ class Work:
             raise utils.UnloadedError("Work isn't loaded. Have you tried calling Work.reload()?")
         download_btn = self.soup.find("li", {"class": "download"})
         for download_type in download_btn.findAll("li"):
-            if download_type.a.getText() == filetype:
+            if download_type.a.getText() == filetype.upper():
                 url = f"https://archiveofourown.org/{download_type.a.attrs['href']}"
                 req = requests.get(url)
                 if req.status_code == 429:
@@ -139,6 +139,22 @@ class Work:
                     raise utils.DownloadError("An error occurred while downloading the work")
                 return req.content
         raise utils.UnexpectedResponseError(f"Filetype '{filetype}' is not available for download")
+    
+    @threadable.threadable
+    def download_to_file(self, filename, filetype="PDF"):
+        """Downloads this work and saves it in the specified file.
+        This function is threadable.
+
+        Args:
+            filename (str): Name of the resulting file
+            filetype (str, optional): Desired filetype. Defaults to "PDF".
+
+        Raises:
+            utils.DownloadError: Raised if there was an error with the download
+            utils.UnexpectedResponseError: Raised if the filetype is not available for download
+        """
+        with open(filename, "wb") as file:
+            file.write(self.download(filetype))
     
     def get_comments(self, chapter=None, maximum=None):
         """Returns a list of all threads of comments in the specified chapter. This operation can take a very long time.
