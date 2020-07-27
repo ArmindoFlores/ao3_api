@@ -39,6 +39,11 @@ class Work:
         This function is threadable.
         """
         
+        for attr in self.__class__.__dict__:
+            if isinstance(getattr(self.__class__, attr), cached_property):
+                if attr in self.__dict__:
+                    delattr(self, attr)
+        
         self.soup = self.request("https://archiveofourown.org/works/%i?view_adult=true"%self.workid)
         if "Error 404" in self.soup.text:
             raise utils.InvalidIdError("Cannot find work")

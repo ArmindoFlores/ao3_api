@@ -123,6 +123,25 @@ print(f"Loaded {len(works)} works in {round(time.time()-start, 1)} seconds.")
 
 As we can see, there is a significant performance increase. There are other functions in this package which have this functionality. To see if a function is "threadable", either use `hasattr(function, "_threadable")` or check its `__doc__` string.
 
+The last important information about the `Work` class is that most of its properties (like the number of bookmarks, kudos, the authors' names, etc...) are cached properties. That means that once you check them once, the value is stored and it won't ever change, even if those values change. To update these values, you will need to call `Work.reload()`. See the example below:
+
+```py3
+import AO3
+
+sess = AO3.GuestSession()
+sess.refresh_auth_token()
+work = AO3.Work(16721367, sess)
+print(work.kudos)
+work.leave_kudos()
+work.reload()
+print(work.kudos)
+```
+
+```
+392
+393
+```
+
 
 
 ## Users
