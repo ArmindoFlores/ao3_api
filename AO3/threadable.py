@@ -14,5 +14,6 @@ def threadable(func):
         
     new.__doc__ = func.__doc__
     new.__name__ = func.__name__
+    new._threadable = True
     return new
             

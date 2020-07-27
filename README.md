@@ -50,7 +50,6 @@ It's important to note that some works may not be accessible to guest users, and
 import AO3
 
 work = AO3.Work(14392692)
-work.load_chapters()
 
 print(work.chapter_names[1])  # Second chapter name
 text = work.get_chapter_text(2)  # Second chapter text
@@ -66,8 +65,6 @@ December 27, 2018
  Christmas sucked this year, and Shouto’s got the black eye to prove it.Things had started out well
 ```
 
-The `work.load_chapters()` function retrieves the chapter ids and names of all the chapters from the selected work, so we must use it before calling `work.get_chapter_text()`, or else we'll get an error.
-
 Another thing you can do with the work object is download the entire work as a pdf or e-book.
 
 ```py3
@@ -79,6 +76,53 @@ work.load_chapters()
 with open(f"{work.title}.pdf", "wb") as file:
     file.write(work.download("PDF"))
 ```
+
+
+__Advanced functionality__
+
+Usually, when you call the constructor for the `Work` class, all info about it is loaded in the `__init__()` function. However, this process takes quite some time (~1-1.5 seconds) and if you want to load a list of works from a series, for example, you might be waiting for upwards of 30 seconds. To avoid this problem, the `Work.reload()` function, called on initialization, is a "threadable" function, which means that if you call it with the argument `threaded=True`, it will return a `Thread` object and work in parallel, meaning you can load multiple works at the same time. Let's take a look at an implementation:
+
+```py3
+import AO3
+import time
+
+series = AO3.Series(1295090)
+
+works = []
+threads = []
+start = time.time()
+for workid, _, _ in series.work_list:
+    work = AO3.Work(workid, load=False)
+    works.append(work)
+    threads.append(work.reload(threaded=True))
+for thread in threads:
+    thread.join()
+print(f"Loaded {len(works)} works in {round(time.time()-start, 1)} seconds.")
+```
+
+`Loaded 29 works in 2.2 seconds.`
+
+The `load=False` inside the `Work` constructor makes sure we don't load the work as soon as we create an instance of the class. In the end, we iterate over every thread and wait for the last one to finish using `.join()`. Let's compare this method with the standard way of loading AO3 works:
+
+```py3
+import AO3
+import time
+
+series = AO3.Series(1295090)
+
+works = []
+start = time.time()
+for workid, _, _ in series.work_list:
+    work = AO3.Work(workid)
+    works.append(work)
+
+print(f"Loaded {len(works)} works in {round(time.time()-start, 1)} seconds.")
+```
+
+`Loaded 29 works in 18.6 seconds.`
+
+As we can see, there is a significant performance increase. There are other functions in this package which have this functionality. To see if a function is "threadable", either use `hasattr(function, "_threadable")` or check its `__doc__` string.
+
 
 
 ## Users

@@ -13,7 +13,7 @@ class Work:
     AO3 work object
     """
 
-    def __init__(self, workid, session=None):
+    def __init__(self, workid, session=None, load=True):
         """Creates a new AO3 work object
 
         Args:
@@ -28,9 +28,20 @@ class Work:
         self.chapter_ids = []
         self.chapter_names = []
         self.workid = workid
-        self.soup = self.request("https://archiveofourown.org/works/%i?view_adult=true"%workid)
+        self.soup = None
+        if load:
+            self.reload()
+        
+    @threadable.threadable
+    def reload(self):
+        """
+        Loads information about this work
+        """
+        
+        self.soup = self.request("https://archiveofourown.org/works/%i?view_adult=true"%self.workid)
         if "Error 404" in self.soup.text:
             raise utils.InvalidIdError("Cannot find work")
+        self.load_chapters()
         
     def set_session(self, session):
         """Sets the session used to make requests for this work
@@ -55,6 +66,8 @@ class Work:
             str: Chapter text
         """
         
+        if not self.loaded:
+            raise utils.UnloadedError("Work isn't loaded. Have you tried calling Work.reload()?")
         if chapter > 0 and chapter <= self.chapters and self.chapters > 1:
             if len(self.chapter_ids) == self.chapters:
                 chapter_html = self.request("https://archiveofourown.org/works/%i/chapters/%s?view_adult=true"%(self.workid, self.chapter_ids[chapter-1]))
@@ -70,10 +83,15 @@ class Work:
             raise utils.UnloadedError("Work.load_chapters() must be called first")
     
     def load_chapters(self):
-        """
-        Loads the urls for all chapters
+        """Loads the urls for all chapters
+
+        Raises:
+            utils.UnloadedError: Work isn't loaded
+            utils.AuthError: This is a private work
         """
         
+        if not self.loaded:
+            raise utils.UnloadedError("Work isn't loaded. Have you tried calling Work.reload()?")
         if not self.oneshot:
             navigate = self.request("https://archiveofourown.org/works/%i/navigate?view_adult=true"%self.workid)
             all_chapters = navigate.find("ol", {'class': 'chapter index group'})
@@ -102,6 +120,8 @@ class Work:
             bytes: File content
         """
         
+        if not self.loaded:
+            raise utils.UnloadedError("Work isn't loaded. Have you tried calling Work.reload()?")
         download_btn = self.soup.find("li", {"class": "download"})
         for download_type in download_btn.findAll("li"):
             if download_type.a.getText() == filetype:
@@ -132,6 +152,8 @@ class Work:
             list: List of comments
         """
         
+        if not self.loaded:
+            raise utils.UnloadedError("Work isn't loaded. Have you tried calling Work.reload()?")
         if self.oneshot:
             chapter_id = self.workid
         else:
@@ -181,6 +203,7 @@ class Work:
         Returns:
             bool: True if successful, False if you already left kudos there
         """
+        
         if self._session is None:
             raise utils.AuthError("Invalid session")
         return utils.kudos(self.workid, self._session)
@@ -202,6 +225,9 @@ class Work:
             requests.models.Response: Response object
         """
         
+        if not self.loaded:
+            raise utils.UnloadedError("Work isn't loaded. Have you tried calling Work.reload()?")
+        
         if self._session is None:
             raise utils.AuthError("Invalid session")
         
@@ -219,7 +245,13 @@ class Work:
         return utils.comment(chapterid, comment_text, self._session, self.oneshot, email=email, name=name)
     
     @property
+    def loaded(self):
+        """Returns True if this work has been loaded"""
+        return self.soup is not None
+    
+    @property
     def oneshot(self):
+        """Returns True if this work has only one chapter"""
         return self.chapters == 1
 
     @cached_property
