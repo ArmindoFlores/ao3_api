@@ -156,11 +156,14 @@ class Session(GuestSession):
         self._subscriptions_url = "https://archiveofourown.org/users/{0}/subscriptions?type=works&page={1:d}"
         self._bookmarks_url = "https://archiveofourown.org/users/{0}/bookmarks?page={1:d}"
         
+        self._bookmarks = None
+        
     def clear_cache(self):
         for attr in self.__class__.__dict__:
             if isinstance(getattr(self.__class__, attr), cached_property):
                 if attr in self.__dict__:
                     delattr(self, attr)
+        self._bookmarks = None
 
     def get_subscriptions(self, page=1):
         """Get the name of the first 20 work subscriptions. If there are more than 20, you may need to specify the page.
@@ -189,35 +192,71 @@ class Session(GuestSession):
             subs.append((workid, workname, authors))
             
         return subs
-
-    def get_bookmarks(self, page=1):
-        """Get the name of the first 20 work bookmarks. If there are more than 20, you may need to specify the page.
-        Must be logged in to use.
-
-        Args:
-            page (int, optional): Bookmarks page. Defaults to 1.
+    
+    @cached_property
+    def _bookmark_pages(self):
+        url = self._bookmarks_url.format(self.username, 1)
+        soup = self.request(url)
+        pages = soup.find("ol", {"title": "pagination"})
+        if pages is None:
+            return 1
+        n = 1
+        for li in pages.findAll("li"):
+            text = li.getText()
+            if text.isdigit():
+                n = int(text)
+        return n
+    
+    def get_bookmarks(self, use_threading=False):
+        """
+        Get bookmarked works. Loads them if they haven't been previously
 
         Returns:
             list: List of tuples (workid, workname, authors)
         """
         
+        if self._bookmarks is None:
+            if use_threading:
+                self.load_bookmarks_threaded()
+            else:
+                self._bookmarks = []
+                for page in range(self._bookmark_pages):
+                    self._load_bookmarks(page=page+1)
+        return self._bookmarks
+    
+    @threadable.threadable
+    def load_bookmarks_threaded(self):
+        """
+        Get bookmarked works using threads.
+        This function is threadable.
+        """ 
+        
+        threads = []
+        self._bookmarks = []
+        for page in range(self._bookmark_pages):
+            threads.append(self._load_bookmarks(page=page+1, threaded=True))
+        for thread in threads:
+            thread.join()
+    
+    @threadable.threadable
+    def _load_bookmarks(self, page=1):       
         url = self._bookmarks_url.format(self.username, page)
         soup = self.request(url)
         bookmarks = soup.find("ol", {'class': 'bookmark index group'})
-        bookms = []
         for bookm in bookmarks.find_all("li", {'class': 'bookmark blurb group'}):
             authors = []
             for a in bookm.h4.find_all("a"):
                 if 'rel' in a.attrs.keys():
                     if "author" in a['rel']:
                         authors.append(a.string)
-                else:
+                elif a.attrs["href"].startswith("/works"):
                     workname = a.string
                     workid = utils.workid_from_url(a['href'])
-            bookms.append((workid, workname, authors))
+                    
+            work = (workid, workname, authors)
+            if work not in self._bookmarks:
+                self._bookmarks.append(work)
             
-        return bookms
-
     @cached_property
     def get_n_bookmarks(self):
         """Get the number of your bookmarks.

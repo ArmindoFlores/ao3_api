@@ -136,7 +136,7 @@ class Series:
                 if 'rel' in a.attrs.keys():
                     if "author" in a['rel']:
                         authors.append(a.string)
-                else:
+                elif a.attrs["href"].startswith("/works"):
                     workname = a.string
                     workid = utils.workid_from_url(a['href'])
             works.append((workid, workname, authors))
