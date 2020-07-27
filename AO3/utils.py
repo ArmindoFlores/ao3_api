@@ -4,6 +4,7 @@ import pickle
 import requests
 from bs4 import BeautifulSoup
 
+
 _FANDOMS = None
 _LANGUAGES = None
 
@@ -313,7 +314,6 @@ def delete_comment(commentid, session):
                 raise PermissionError("You don't have permission to do this")
     raise UnexpectedResponseError("An unexpected error has occurred")
             
-    
 def kudos(workid, session):
     """Leave a 'kudos' in a specific work
 
@@ -357,3 +357,34 @@ def kudos(workid, session):
         raise UnexpectedResponseError(f"Unexpected json received:\n"+str(json))
     else:
         raise UnexpectedResponseError(f"Unexpected HTTP status code received ({response.status_code})")
+    
+def subscribe(workid, worktype, session):
+    """Subscribes to a work. Be careful, you can subscribe to a work multiple times
+
+    Args:
+        workid (int/str): ID of the work
+        worktype (str): Type of the work (Series/Work/User)
+        session (AO3.Session): Session object
+
+    Raises:
+        AuthError: Invalid auth token
+        AuthError: Invalid session
+        InvalidIdError: Invalid workid / worktype
+    """
+    if not session.is_authed:
+        raise AuthError("Invalid session")
+    
+    data = {
+        "authenticity_token": session.authenticity_token,
+        "subscription[subscribable_id]": workid,
+        "subscription[subscribable_type]": worktype.capitalize()
+    }
+    url = f"https://archiveofourown.org/users/{session.username}/subscriptions"
+    req = session.post(url, data=data, allow_redirects=False)
+    
+    if req.status_code == 302:
+        if req.headers["Location"] == "https://archiveofourown.org/auth_error":
+            raise AuthError("Invalid authentication token. Try calling session.refresh_auth_token()")
+    else:
+        raise InvalidIdError(f"Invalid workid / worktype")
+    

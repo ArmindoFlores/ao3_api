@@ -19,6 +19,7 @@ class Work:
         Args:
             workid (int): AO3 work ID
             session (AO3.Session, optional): Used to access restricted works
+            load (bool, optional): If true, the work is loaded on initialization. Defaults to True.
 
         Raises:
             utils.InvalidIdError: Raised if the work wasn't found
@@ -560,7 +561,6 @@ class Work:
 
         Args:
             url (str): Url to request
-            data (dict, optional): Optional data to send in the request. Defaults to {}.
 
         Returns:
             bs4.BeautifulSoup: BeautifulSoup object representing the requested page's html

@@ -4,7 +4,7 @@ from functools import cached_property
 import requests
 from bs4 import BeautifulSoup
 
-from . import utils
+from . import threadable, utils
 
 
 class User:
@@ -12,17 +12,55 @@ class User:
     AO3 user object
     """
 
-    def __init__(self, username):
+    def __init__(self, username, session=None, load=True):
         """Creates a new AO3 user object
 
         Args:
             username (str): AO3 username
+            session (AO3.Session, optional): Used to access additional info
+            load (bool, optional): If true, the user is loaded on initialization. Defaults to True.
         """
 
         self.username = username
-        self.soup_works = self.request("https://archiveofourown.org/users/%s/works?page=1"%(username))
+        self._session = session
+        self._soup_works = None
+        self._soup_profile = None
+        if load:
+            self.reload()
         self.loaded_page = 1
-        self.soup_profile = self.request("https://archiveofourown.org/users/%s/profile"%username)
+        
+    def set_session(self, session):
+        """Sets the session used to make requests for this work
+
+        Args:
+            session (AO3.Session/AO3.GuestSession): session object
+        """
+        
+        self._session = session 
+        
+    @threadable.threadable
+    def reload(self):
+        """
+        Loads information about this user.
+        This function is threadable.
+        """
+        
+        for attr in self.__class__.__dict__:
+            if isinstance(getattr(self.__class__, attr), cached_property):
+                if attr in self.__dict__:
+                    delattr(self, attr)
+        
+        @threadable.threadable
+        def req_works(username):
+            self._soup_works = self.request(f"https://archiveofourown.org/users/{username}/works")
+           
+        @threadable.threadable
+        def req_profile(username): 
+            self._soup_profile = self.request(f"https://archiveofourown.org/users/{username}/profile")
+            
+        w, p = req_works(self.username, threaded=True), req_profile(self.username, threaded=True)
+        w.join()
+        p.join()
         
     def get_avatar(self):
         """Returns a tuple containing the name of the file and its data
@@ -31,11 +69,22 @@ class User:
             tuple: (name: str, img: bytes)
         """
         
-        icon = self.soup_profile.find("p", {"class": "icon"})
+        icon = self._soup_profile.find("p", {"class": "icon"})
         src = icon.img.attrs["src"]
         name = src.split("/")[-1].split("?")[0]
         img = requests.get(src).content
         return name, img
+    
+    @cached_property
+    def user_id(self):
+        if self._session is None or not self._session.is_authed:
+            raise utils.AuthError("You can only get a user ID using an authenticated session")
+        
+        header = self._soup_profile.find("div", {"class": "primary header module"})
+        input_ = header.find("input", {"name": "subscription[subscribable_id]"})
+        if input_ is None:
+            raise utils.UnexpectedResponseError("Couldn't fetch user ID")
+        return int(input_.attrs["value"])
 
     @cached_property
     def works(self):
@@ -45,7 +94,7 @@ class User:
             int: Number of works
         """
 
-        div = self.soup_works.find("div", {'id': 'inner'})
+        div = self._soup_works.find("div", {'id': 'inner'})
         span = div.find("span", {'class': 'current'}).getText().replace("(", "").replace(")", "")
         n = span.split(" ")[1]
         return int(self.str_format(n))   
@@ -71,10 +120,10 @@ class User:
         """
 
         if self.loaded_page != page:
-            self.soup_works = self.request("https://archiveofourown.org/users/%s/works?page=%i"%(self.username, page))
+            self._soup_works = self.request("https://archiveofourown.org/users/%s/works?page=%i"%(self.username, page))
             self.loaded_page = page
             
-        ol = self.soup_works.find("ol", {'class': 'work index group'})
+        ol = self._soup_works.find("ol", {'class': 'work index group'})
         works = {}
         for work in ol.find_all("li", {'role': 'article'}):
             works[int(self.str_format(work['id'].split("_")[-1]))] = work.a.string.strip()
@@ -89,8 +138,8 @@ class User:
             str: User's bio
         """
 
-        blockquote = self.soup_profile.find("blockquote", {'class': 'userstuff'})
-        return BeautifulSoup.getText(blockquote)        
+        blockquote = self._soup_profile.find("blockquote", {'class': 'userstuff'})
+        return blockquote.getText() if blockquote is not None else ""    
     
     @cached_property
     def url(self):
@@ -102,19 +151,20 @@ class User:
 
         return "https://archiveofourown.org/users/%s"%self.username      
 
-    @staticmethod
-    def request(url):
+    def request(self, url):
         """Request a web page and return a BeautifulSoup object.
 
         Args:
             url (str): Url to request
-            data (dict, optional): Optional data to send in the request. Defaults to {}.
 
         Returns:
             bs4.BeautifulSoup: BeautifulSoup object representing the requested page's html
         """
 
-        req = requests.get(url)
+        if self._session is None:
+            req = requests.get(url)
+        else:
+            req = self._session.session.get(url)
         if req.status_code == 429:
             raise utils.HTTPError("We are being rate-limited. Try again in a while or reduce the number of requests")
         content = req.content
