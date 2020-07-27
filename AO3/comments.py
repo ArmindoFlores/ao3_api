@@ -65,7 +65,10 @@ class Comment:
             soup = BeautifulSoup(req.content, features="lxml")
             thread = soup.find("ol", {"class": "thread"})
             first = thread.find("li", {"id": f"comment_{self.comment_id}"})
-            text = first.blockquote.getText()
+            if first.blockquote is not None:
+                text = first.blockquote.getText()
+            else:
+                text = ""
             self._cache["comment_text"] = text
             return text
         
@@ -86,13 +89,22 @@ class Comment:
                 c._cache["thread"] = []
                 if parent is not None:
                     c.reply_id = parent.comment_id
-                    c._cache["comment_text"] = comment.blockquote.getText()
+                    if comment.blockquote is not None:
+                        c._cache["comment_text"] = comment.blockquote.getText()
+                    else:
+                        c._cache["comment_text"] = ""
                     c._cache["author"] = comment.a.getText()
                     l.append(c)
                 else:
                     c.reply_id = self.comment_id
-                    l[0]._cache["comment_text"] = comment.blockquote.getText()
-                    l[0]._cache["author"] = comment.a.getText()
+                    if comment.blockquote is not None:
+                        l[0]._cache["comment_text"] = comment.blockquote.getText()
+                    else:
+                        l[0]._cache["comment_text"] = ""
+                    if comment.a is not None:
+                        l[0]._cache["author"] = comment.a.getText()
+                    else:
+                        l[0]._cache["author"] = ""
             else:
                 self._get_thread(l[-1], comment.ol)
         if parent is not None:
@@ -140,7 +152,10 @@ class Comment:
             if thread is None:
                 self._cache["thread"] = []
             first = thread.find("li", {"id": f"comment_{self.comment_id}"})
-            text = first.blockquote.getText()
+            if first.blockquote is not None:
+                text = first.blockquote.getText()
+            else:
+                text = ""
             self._cache["comment_text"] = text
             self._get_thread(None, thread)
             if "thread" in self._cache:
@@ -173,6 +188,15 @@ class Comment:
         if self.chapter_id is None:
             raise ValueError("self.chapter_id cannot be 'None'")
         return utils.comment(self.chapter_id, comment_text, session, self.oneshot, self.comment_id, email, name)
+    
+    @utils.threadable
+    def load(self, refresh=False):
+        """Loads all comment properties
+
+        Args:
+            refresh (bool, optional): True to update cache. Defaults to False.
+        """
+        self.get_thread(refresh)
     
     def delete(self, session):
         """Deletes this comment

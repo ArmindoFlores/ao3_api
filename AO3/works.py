@@ -88,7 +88,6 @@ class Work:
             self.chapter_ids = [""]
             self.chapter_names = [self.title]
             
-    @utils.threadable
     def download(self, filetype="PDF"):
         """Downloads this work
 

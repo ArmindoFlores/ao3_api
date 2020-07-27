@@ -101,7 +101,7 @@ class Constraint:
         return self.string
     
 def threadable(func):
-    """Allows the function to be ran as a thread using the 'thread' argument"""
+    """Allows the function to be ran as a thread using the 'threaded' argument"""
     
     def new(*args, threaded=False, **kwargs):
         if threaded:
