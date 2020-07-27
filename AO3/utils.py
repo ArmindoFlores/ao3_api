@@ -1,5 +1,6 @@
 import os
 import pickle
+import threading
 
 import requests
 from bs4 import BeautifulSoup
@@ -98,6 +99,21 @@ class Constraint:
 
     def __str__(self):
         return self.string
+    
+def threadable(func):
+    """Allows the function to be ran as a thread using the 'thread' argument"""
+    
+    def new(*args, threaded=False, **kwargs):
+        if threaded:
+            thread = threading.Thread(target=func, args=args, kwargs=kwargs)
+            thread.start()
+            return thread
+        else:
+            return func(*args, **kwargs)
+        
+    new.__doc__ = func.__doc__
+    new.__name__ = func.__name__
+    return new
     
 def load_fandoms():
     """Loads fandoms into memory

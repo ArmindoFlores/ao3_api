@@ -39,6 +39,7 @@ class Search:
         self.pages = 0
         self.total_results = 0
 
+    @utils.threadable
     def update(self):
         """Sends a request to the AO3 website with the defined search parameters, and updates all info
         """

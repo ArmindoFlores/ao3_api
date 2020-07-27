@@ -88,6 +88,7 @@ class Work:
             self.chapter_ids = [""]
             self.chapter_names = [self.title]
             
+    @utils.threadable
     def download(self, filetype="PDF"):
         """Downloads this work
 
@@ -169,6 +170,7 @@ class Work:
                 comments.append(Comment(id_, chapter_id))
         return comments
     
+    @utils.threadable
     def leave_kudos(self):
         """Leave a 'kudos' in this work
 
@@ -184,6 +186,7 @@ class Work:
             raise utils.AuthError("Invalid session")
         return utils.kudos(self.workid, self._session)
     
+    @utils.threadable
     def comment(self, chapter, comment_text, email="", name=""):
         """Leaves a comment on this work
 

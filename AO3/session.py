@@ -13,7 +13,8 @@ class GuestSession:
         self.authenticity_token = None
         self.username = ""
         self.session = requests.Session()
-        
+    
+    @utils.threadable
     def comment(self, chapterid, comment_text, oneshot=False, commentid=None):
         """Leaves a comment on a specific work
 
@@ -37,7 +38,8 @@ class GuestSession:
         response = utils.comment(chapterid, comment_text, self, oneshot, commentid)
         return response
     
-        
+    
+    @utils.threadable
     def kudos(self, workid):
         """Leave a 'kudos' in a specific work
 
