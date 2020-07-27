@@ -19,7 +19,7 @@ https://github.com/ArmindoFlores/ao3_api
 
 # Usage
 
-This package is divided in 7 core modules: works, users, search, session, comments, extra, and utils.
+This package is divided in 8 core modules: works, users, series, search, session, comments, extra, and utils.
 
 ## Works
 
