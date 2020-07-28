@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup
 
 from . import threadable, utils
 
-print("user was loaded")
+
 class User:
     """
     AO3 user object
@@ -110,7 +110,7 @@ class User:
         if self._session is None or not self._session.is_authed:
             raise utils.AuthError("You can only unsubscribe from a user using an authenticated session")
         
-        utils.subscribe(self.user_id, "User", self._session, True, self.sub_id)
+        utils.subscribe(self.user_id, "User", self._session, True, self._sub_id)
         
     @cached_property
     def is_subscribed(self):
@@ -135,7 +135,7 @@ class User:
         return int(input_.attrs["value"])
     
     @cached_property
-    def sub_id(self):
+    def _sub_id(self):
         """Returns the subscription ID. Used for unsubscribing"""
         
         if not self.is_subscribed:
@@ -175,7 +175,7 @@ class User:
         Get works authored by this user. Loads them if they haven't been previously
 
         Returns:
-            list: List of tuples (workid, workname, authors)
+            list: List of works
         """
         
         if self._works is None:

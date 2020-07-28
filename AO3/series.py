@@ -21,11 +21,21 @@ class Series:
         Raises:
             utils.InvalidIdError: Invalid series ID
         """
+        
         self.seriesid = seriesid
         self._session = session
         self._soup = None
         if load:
             self.reload()
+            
+    def __eq__(self, other):
+        return isinstance(other, Series) and other.seriesid == self.seriesid
+    
+    def __repr__(self):
+        try:
+            return f"<Series [{self.name}]>" 
+        except:
+            return f"<Series [{self.seriesid}]>"
         
     @threadable.threadable
     def reload(self):
@@ -71,7 +81,7 @@ class Series:
         if self._session is None or not self._session.is_authed:
             raise utils.AuthError("You can only unsubscribe from a series using an authenticated session")
         
-        utils.subscribe(self.seriesid, "Series", self._session, True, self.sub_id)
+        utils.subscribe(self.seriesid, "Series", self._session, True, self._sub_id)
         
     @cached_property
     def is_subscribed(self):
@@ -85,7 +95,7 @@ class Series:
         return input_ is not None
     
     @cached_property
-    def sub_id(self):
+    def _sub_id(self):
         """Returns the subscription ID. Used for unsubscribing"""
         
         if not self.is_subscribed:
@@ -94,11 +104,16 @@ class Series:
         form = self._soup.find("form", {"data-create-value": "Subscribe"})
         id_ = form.attrs["action"].split("/")[-1]
         return int(id_)
+    
+    @cached_property
+    def name(self):
+        div = self._soup.find("div", {"class": "series-show region"})
+        return div.h2.getText().replace("\t", "").replace("\n", "")
         
     @cached_property
-    def creator(self):
+    def creators(self):
         dl = self._soup.find("dl", {"class": "series meta group"})
-        return [author.getText() for author in dl.findAll("a", {"rel": "author"})]
+        return [User(author.getText(), load=False) for author in dl.findAll("a", {"rel": "author"})]
     
     @cached_property
     def series_begun(self):

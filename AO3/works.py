@@ -7,7 +7,7 @@ from bs4 import BeautifulSoup
 from . import threadable, utils
 from .comments import Comment
 
-print("work was loaded")
+
 class Work:
     """
     AO3 work object
@@ -34,7 +34,10 @@ class Work:
             self.reload()
             
     def __repr__(self):
-        return f"<Work [{self.title}]>"
+        try:
+            return f"<Work [{self.title}]>"
+        except:
+            return f"<Work [{self.workid}]>"
     
     def __eq__(self, other):
         return isinstance(other, Work) and other.workid == self.workid
@@ -249,7 +252,7 @@ class Work:
         if self._session is None or not self._session.is_authed:
             raise utils.AuthError("You can only unsubscribe from a work using an authenticated session")
         
-        utils.subscribe(self.workid, "Work", self._session, True, self.sub_id)
+        utils.subscribe(self.workid, "Work", self._session, True, self._sub_id)
         
     @cached_property
     def is_subscribed(self):
@@ -263,7 +266,7 @@ class Work:
         return input_ is not None
     
     @cached_property
-    def sub_id(self):
+    def _sub_id(self):
         """Returns the subscription ID. Used for unsubscribing"""
         
         if self._session is None or not self._session.is_authed:

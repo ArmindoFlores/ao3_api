@@ -6,6 +6,7 @@ from bs4 import BeautifulSoup
 from . import threadable, utils
 from .users import User
 from .works import Work
+from .series import Series
 
 
 class GuestSession:
@@ -159,6 +160,7 @@ class Session(GuestSession):
         self._bookmarks_url = "https://archiveofourown.org/users/{0}/bookmarks?page={1:d}"
         
         self._bookmarks = None
+        self._subscriptions = None
         
     def clear_cache(self):
         for attr in self.__class__.__dict__:
@@ -166,34 +168,124 @@ class Session(GuestSession):
                 if attr in self.__dict__:
                     delattr(self, attr)
         self._bookmarks = None
-
-    def get_subscriptions(self, page=1):
-        """Get the name of the first 20 work subscriptions. If there are more than 20, you may need to specify the page.
-        Must be logged in to use.
-
-        Args:
-            page (int, optional): Subscriptions page. Defaults to 1.
+        self._subscriptions = None
+        
+    @cached_property
+    def _subscription_pages(self):
+        url = self._subscriptions_url.format(self.username, 1)
+        soup = self.request(url)
+        pages = soup.find("ol", {"title": "pagination"})
+        if pages is None:
+            return 1
+        n = 1
+        for li in pages.findAll("li"):
+            text = li.getText()
+            if text.isdigit():
+                n = int(text)
+        return n
+    
+    def get_work_subscriptions(self, use_threading=False):
+        """
+        Get subscribed works. Loads them if they haven't been previously
 
         Returns:
-            list: List of tuples (workid, workname, authors)
+            list: List of work subscriptions
         """
         
+        subs = self.get_subscriptions(use_threading)
+        return list(filter(lambda obj: isinstance(obj, Work), subs))
+    
+    def get_series_subscriptions(self, use_threading=False):
+        """
+        Get subscribed series. Loads them if they haven't been previously
+
+        Returns:
+            list: List of series subscriptions
+        """
+        
+        subs = self.get_subscriptions(use_threading)
+        return list(filter(lambda obj: isinstance(obj, Series), subs))
+    
+    def get_user_subscriptions(self, use_threading=False):
+        """
+        Get subscribed users. Loads them if they haven't been previously
+
+        Returns:
+            list: List of users subscriptions
+        """
+        
+        subs = self.get_subscriptions(use_threading)
+        return list(filter(lambda obj: isinstance(obj, User), subs))
+    
+    def get_subscriptions(self, use_threading=False):
+        """
+        Get user's subscriptions. Loads them if they haven't been previously
+
+        Returns:
+            list: List of subscriptions
+        """
+        
+        if self._subscriptions is None:
+            if use_threading:
+                self.load_subscriptions_threaded()
+            else:
+                self._subscriptions = []
+                for page in range(self._subscription_pages):
+                    self._load_subscriptions(page=page+1)
+        return self._subscriptions
+    
+    @threadable.threadable
+    def load_subscriptions_threaded(self):
+        """
+        Get subscribed works using threads.
+        This function is threadable.
+        """ 
+        
+        threads = []
+        self._subscriptions = []
+        for page in range(self._subscription_pages):
+            threads.append(self._load_subscriptions(page=page+1, threaded=True))
+        for thread in threads:
+            thread.join()
+
+    @threadable.threadable
+    def _load_subscriptions(self, page=1):        
         url = self._subscriptions_url.format(self.username, page)
         soup = self.request(url)
         subscriptions = soup.find("dl", {'class': 'subscription index group'})
-        subs = []
         for sub in subscriptions.find_all("dt"):
+            type_ = "work"
+            user = None
+            series = None
+            workid = None
+            workname = None
             authors = []
             for a in sub.find_all("a"):
                 if 'rel' in a.attrs.keys():
                     if "author" in a['rel']:
-                        authors.append(a.string)
-                else:
+                        authors.append(User(a.string, load=False))
+                elif a['href'].startswith("/works"):
                     workname = a.string
                     workid = utils.workid_from_url(a['href'])
-            subs.append((workid, workname, authors))
-            
-        return subs
+                elif a['href'].startswith("/users"):
+                    type_ = "user"
+                    user = User(a.string, load=False)
+                else:
+                    type_ = "series"
+                    workname = a.string
+                    series = int(a['href'].split("/")[-1])
+            if type_ == "work":
+                new = Work(workid, load=False)
+                setattr(new, "title", workname)
+                setattr(new, "authors", authors)
+                self._subscriptions.append(new)
+            elif type_ == "user":
+                self._subscriptions.append(user)
+            elif type_ == "series":
+                new = Series(series, load=False)
+                setattr(new, "name", workname)
+                setattr(new, "authors", authors)
+                self._subscriptions.append(new)
     
     @cached_property
     def _bookmark_pages(self):
