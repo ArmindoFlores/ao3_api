@@ -221,7 +221,7 @@ class Work:
                 if maximum is not None and len(comments) >= maximum:
                     return comments
                 id_ = int(li.attrs["id"][8:])
-                comments.append(Comment(id_, chapter_id))
+                comments.append(Comment(id_, chapter_id, oneshot=self.oneshot))
         return comments
     
     @threadable.threadable

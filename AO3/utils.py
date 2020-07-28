@@ -226,10 +226,12 @@ def comment(chapterid, comment_text, sess, oneshot=False, commentid=None, email=
         else:
             referer = f"https://archiveofourown.org/chapters/{chapterid}"
             
-        soup = sess.request(referer)            
+        soup = sess.request(referer)   
         pseud = soup.find("input", {"name": "comment[pseud_id]"})
         if pseud is None:
             pseud = soup.find("select", {"name": "comment[pseud_id]"})
+            if pseud is None:
+                raise PseudError("Couldn't find your pseud's id")
             pseud_id = None
             for option in pseud.findAll("option"):
                 if "selected" in option.attrs and option.attrs["selected"] == "selected":
