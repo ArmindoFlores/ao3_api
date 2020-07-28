@@ -4,6 +4,8 @@ import requests
 from bs4 import BeautifulSoup
 
 from . import threadable, utils
+from .users import User
+from .works import Work
 
 
 class Search:
@@ -57,11 +59,15 @@ class Search:
             for a in work.h4.find_all("a"):
                 if 'rel' in a.attrs.keys():
                     if "author" in a['rel']:
-                        authors.append(a.string)
+                        authors.append(User(a.string, load=False))
                 elif a.attrs["href"].startswith("/works"):
                     workname = a.string
                     workid = utils.workid_from_url(a['href'])
-            works.append((workid, workname, authors))
+                    
+            new = Work(workid, load=False)
+            setattr(new, "authors", authors)
+            setattr(new, "title", workname)
+            works.append(new)
             
         self.results = works
         maindiv = soup.find("div", {"class": "works-search region", "id": "main"})

@@ -2,6 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from . import threadable, utils
+from .users import User
 
 
 class Comment:
@@ -43,7 +44,7 @@ class Comment:
             soup = BeautifulSoup(req.content, features="lxml")
             thread = soup.find("ol", {"class": "thread"})
             first = thread.find("li", {"id": f"comment_{self.comment_id}"})
-            self._cache["author"] = first.a.getText()
+            self._cache["author"] = User(first.a.getText(), load=False)
             return self._cache["author"]
         
     def get_text(self, refresh=False):
@@ -93,7 +94,7 @@ class Comment:
                         c._cache["comment_text"] = comment.blockquote.getText()
                     else:
                         c._cache["comment_text"] = ""
-                    c._cache["author"] = comment.a.getText()
+                    c._cache["author"] = User(comment.a.getText(), load=False)
                     l.append(c)
                 else:
                     c.reply_id = self.comment_id
@@ -102,9 +103,9 @@ class Comment:
                     else:
                         l[0]._cache["comment_text"] = ""
                     if comment.a is not None:
-                        l[0]._cache["author"] = comment.a.getText()
+                        l[0]._cache["author"] = User(comment.a.getText(), load=False)
                     else:
-                        l[0]._cache["author"] = ""
+                        l[0]._cache["author"] = None
             else:
                 self._get_thread(l[-1], comment.ol)
         if parent is not None:

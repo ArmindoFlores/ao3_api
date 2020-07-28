@@ -7,7 +7,7 @@ from bs4 import BeautifulSoup
 from . import threadable, utils
 from .comments import Comment
 
-
+print("work was loaded")
 class Work:
     """
     AO3 work object
@@ -32,6 +32,12 @@ class Work:
         self._soup = None
         if load:
             self.reload()
+            
+    def __repr__(self):
+        return f"<Work [{self.title}]>"
+    
+    def __eq__(self, other):
+        return isinstance(other, Work) and other.workid == self.workid
         
     @threadable.threadable
     def reload(self):
@@ -340,11 +346,13 @@ class Work:
             list: list of authors
         """
 
+        from .users import User
         authors = self._soup.find_all("a", {'rel': 'author'})
         author_list = []
         if authors is not None:
             for author in authors:
-                author_list.append(author.string.strip())
+                user = User(author.string, load=False)
+                author_list.append(user)
             
         return author_list
 

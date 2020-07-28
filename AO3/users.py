@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup
 
 from . import threadable, utils
 
-
+print("user was loaded")
 class User:
     """
     AO3 user object
@@ -25,9 +25,15 @@ class User:
         self._session = session
         self._soup_works = None
         self._soup_profile = None
+        self._works = None
         if load:
             self.reload()
-        self.loaded_page = 1
+            
+    def __repr__(self):
+        return f"<User [{self.username}]>"
+    
+    def __eq__(self, other):
+        return isinstance(other, User) and other.username == self.username
         
     def set_session(self, session):
         """Sets the session used to make requests for this work
@@ -61,6 +67,7 @@ class User:
         w, p = req_works(self.username, threaded=True), req_profile(self.username, threaded=True)
         w.join()
         p.join()
+        self._works = None
         
     def get_avatar(self):
         """Returns a tuple containing the name of the file and its data
@@ -152,36 +159,70 @@ class User:
         return int(self.str_format(n))   
 
     @cached_property
-    def npages(self):
-        """Returns the number of work pages
+    def _works_pages(self):
+        pages = self._soup_works.find("ol", {"title": "pagination"})
+        if pages is None:
+            return 1
+        n = 1
+        for li in pages.findAll("li"):
+            text = li.getText()
+            if text.isdigit():
+                n = int(text)
+        return n
+    
+    def get_works(self, use_threading=False):
+        """
+        Get works authored by this user. Loads them if they haven't been previously
 
         Returns:
-            int: Number of pages
+            list: List of tuples (workid, workname, authors)
         """
-
-        return (self.works-1) // 20 + 1
-
-    def get_work_list(self, page=1):
-        """Returns the first 20 works by the author, unless the page is specified
-
-        Args:
-            page (int, optional): Page number. Defaults to 1.
-
-        Returns:
-            dict: Dictionary representing works {workid: workname}
+        
+        if self._works is None:
+            if use_threading:
+                self.load_works_threaded()
+            else:
+                self._works = []
+                for page in range(self._works_pages):
+                    self._load_works(page=page+1)
+        return self._works
+    
+    @threadable.threadable
+    def load_works_threaded(self):
         """
+        Get the user's works using threads.
+        This function is threadable.
+        """ 
+        
+        threads = []
+        self._works = []
+        for page in range(self._works_pages):
+            threads.append(self._load_works(page=page+1, threaded=True))
+        for thread in threads:
+            thread.join()
 
-        if self.loaded_page != page:
-            self._soup_works = self.request("https://archiveofourown.org/users/%s/works?page=%i"%(self.username, page))
-            self.loaded_page = page
+    @threadable.threadable
+    def _load_works(self, page=1):
+        from .works import Work
+        self._soup_works = self.request(f"https://archiveofourown.org/users/{self.username}/works?page={page}")
             
         ol = self._soup_works.find("ol", {'class': 'work index group'})
-        works = {}
-        for work in ol.find_all("li", {'role': 'article'}):
-            works[int(self.str_format(work['id'].split("_")[-1]))] = work.a.string.strip()
-            
-        return works
 
+        for work in ol.find_all("li", {'role': 'article'}):
+            authors = []
+            for a in work.h4.find_all("a"):
+                if 'rel' in a.attrs.keys():
+                    if "author" in a['rel']:
+                        authors.append(User(a.string, load=False))
+                elif a.attrs["href"].startswith("/works"):
+                    name = a.string
+                    id_ = utils.workid_from_url(a['href'])
+            new = Work(id_, load=False)
+            setattr(new, "title", name)
+            setattr(new, "authors", authors)
+            if new not in self._works:
+                self._works.append(new)
+    
     @cached_property
     def bio(self):
         """Returns the user's bio

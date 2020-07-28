@@ -5,6 +5,8 @@ import requests
 from bs4 import BeautifulSoup
 
 from . import threadable, utils
+from .users import User
+from .works import Work
 
 
 class Series:
@@ -213,11 +215,14 @@ class Series:
             for a in work.h4.find_all("a"):
                 if 'rel' in a.attrs.keys():
                     if "author" in a['rel']:
-                        authors.append(a.string)
+                        authors.append(User(a.string, load=False))
                 elif a.attrs["href"].startswith("/works"):
                     workname = a.string
                     workid = utils.workid_from_url(a['href'])
-            works.append((workid, workname, authors))
+            new = Work(workid, load=False)
+            setattr(new, "title", workname)
+            setattr(new, "authors", authors)
+            works.append(new)
         return works
     
     def request(self, url):

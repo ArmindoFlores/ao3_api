@@ -4,6 +4,8 @@ import requests
 from bs4 import BeautifulSoup
 
 from . import threadable, utils
+from .users import User
+from .works import Work
 
 
 class GuestSession:
@@ -153,7 +155,7 @@ class Session(GuestSession):
         if not post.status_code == 302:
             raise utils.LoginError("Invalid username or password")
 
-        self._subscriptions_url = "https://archiveofourown.org/users/{0}/subscriptions?type=works&page={1:d}"
+        self._subscriptions_url = "https://archiveofourown.org/users/{0}/subscriptions?page={1:d}"
         self._bookmarks_url = "https://archiveofourown.org/users/{0}/bookmarks?page={1:d}"
         
         self._bookmarks = None
@@ -248,14 +250,16 @@ class Session(GuestSession):
             for a in bookm.h4.find_all("a"):
                 if 'rel' in a.attrs.keys():
                     if "author" in a['rel']:
-                        authors.append(a.string)
+                        authors.append(User(a.string, load=False))
                 elif a.attrs["href"].startswith("/works"):
                     workname = a.string
                     workid = utils.workid_from_url(a['href'])
-                    
-            work = (workid, workname, authors)
-            if work not in self._bookmarks:
-                self._bookmarks.append(work)
+            
+            new = Work(workid, load=False)
+            setattr(workid, "title", workname)
+            setattr(workid, "authors", authors)
+            if new not in self._bookmarks:
+                self._bookmarks.append(new)
             
     @cached_property
     def get_n_bookmarks(self):
