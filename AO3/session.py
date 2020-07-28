@@ -348,8 +348,8 @@ class Session(GuestSession):
                     workid = utils.workid_from_url(a['href'])
             
             new = Work(workid, load=False)
-            setattr(workid, "title", workname)
-            setattr(workid, "authors", authors)
+            setattr(new, "title", workname)
+            setattr(new, "authors", authors)
             if new not in self._bookmarks:
                 self._bookmarks.append(new)
             
