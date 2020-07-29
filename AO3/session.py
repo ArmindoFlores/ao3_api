@@ -354,7 +354,7 @@ class Session(GuestSession):
                 self._bookmarks.append(new)
             
     @cached_property
-    def get_n_bookmarks(self):
+    def bookmarks(self):
         """Get the number of your bookmarks.
         Must be logged in to use.
 

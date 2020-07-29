@@ -52,7 +52,6 @@ Another thing you can do with the work object is download the entire work as a p
 import AO3
 
 work = AO3.Work(14392692)
-work.load_chapters()
 
 with open(f"{work.title}.pdf", "wb") as file:
     file.write(work.download("PDF"))
@@ -93,16 +92,35 @@ series = AO3.Series(1295090)
 
 works = []
 start = time.time()
-for workid, _, _ in series.work_list:
-    work = AO3.Work(workid)
+for work in series.work_list:
+    work.reload()
     works.append(work)
 
 print(f"Loaded {len(works)} works in {round(time.time()-start, 1)} seconds.")
 ```
 
-`Loaded 29 works in 18.6 seconds.`
+`Loaded 29 works in 21.6 seconds.`
 
 As we can see, there is a significant performance increase. There are other functions in this package which have this functionality. To see if a function is "threadable", either use `hasattr(function, "_threadable")` or check its `__doc__` string.
+
+The last important information about the `Work` class is that most of its properties (like the number of bookmarks, kudos, the authors' names, etc...) are cached properties. That means that once you check them once, the value is stored and it won't ever change, even if those values change. To update these values, you will need to call `Work.reload()`. See the example below:
+
+```py3
+import AO3
+
+sess = AO3.GuestSession()
+sess.refresh_auth_token()
+work = AO3.Work(16721367, sess)
+print(work.kudos)
+work.leave_kudos()
+work.reload()
+print(work.kudos)
+```
+
+```
+392
+393
+```
 
 
 
@@ -139,28 +157,28 @@ for result in search.results:
   print(result)
 ```
 
-```py3
-3070
-(5889004, 'five times lexa falls for clarke', ['nutmeg101'])
-(10988430, 'an incomplete list of reasons (why Clarke loves Lexa)', ['RaeDMagdon'])
-(6216283, "five times clarke and lexa aren’t sure if they're a couple or not", ['nutmeg101'])
-(6422242, 'Chemistry', ['CaffeineDream'])
-(3516830, 'The New Commander (Lexa Joining Camp Jaha)', ['Vision'])
-(23012080, "it's always been (right in front of me)", ['kursty'])
-(8915020, 'Ode to Clarke', ['Combatboots'])
-(7383091, 'The Girlfriend Tag', ['hush_mya'])
-(11100006, 'The After-Heda Chronicles', ['hedasgirl'])
-(6748720, 'The Counter', ['FompFloat'])
-(3504113, 'The Games We Play', ['MsRay3'])
-(13550457, 'Self Control', ['Drummer_Girl'])
-(9647864, 'May We Meet Again', ['HJ1'])
-(5196890, "A l'épreuve des balles", ['Kardhane (ThroughMyMind)'])
-(13438785, 'Celebration', ['Na_Na_Nessa'])
-(10139129, 'No Filter', ['Bal3xicon'])
-(None, 'My osom girlfriend', ['Tabitha Craft (Tabithacraft)'])
-(9927671, 'Another level of fucked up', ['I_am_clexa'])
-(4687346, "He's Jealous", ['WhoKilledBambi'])
-(3847735, "(Don't Ever Want to Tame) This Wild Heart", ['acaelousqueadcentrum'])
+```
+3074
+<Work [five times lexa falls for clarke]>
+<Work [an incomplete list of reasons (why Clarke loves Lexa)]>
+<Work [five times clarke and lexa aren’t sure if they're a couple or not]>
+<Work [Chemistry]>
+<Work [The New Commander (Lexa Joining Camp Jaha)]>
+<Work [Ode to Clarke]>
+<Work [it's always been (right in front of me)]>
+<Work [The Girlfriend Tag]>
+<Work [The After-Heda Chronicles]>
+<Work [The Counter]>
+<Work [May We Meet Again]>
+<Work [No Filter]>
+<Work [The Games We Play]>
+<Work [A l'épreuve des balles]>
+<Work [Celebration]>
+<Work [Another level of fucked up]>
+<Work [(Don't Ever Want to Tame) This Wild Heart]>
+<Work [Self Control]>
+<Work [Winter]>
+<Work [My only wish]>
 ```
 
 You can then use the workid to load one of the works you searched for. To get more then the first 20 works, change the page number using 
@@ -176,7 +194,7 @@ A lot of actions you might want to take might require an AO3 account, and if you
 import AO3
 
 session = AO3.Session("username", "password")
-print(f"Bookmarks: {session.get_n_bookmarks()}")
+print(f"Bookmarks: {session.bookmarks}")
 session.refresh_auth_token()
 print(session.kudos(14392692))
 ```
