@@ -5,6 +5,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from . import threadable, utils
+from .requester import requester
 
 
 class User:
@@ -79,7 +80,7 @@ class User:
         icon = self._soup_profile.find("p", {"class": "icon"})
         src = icon.img.attrs["src"]
         name = src.split("/")[-1].split("?")[0]
-        img = requests.get(src).content
+        img = self.get(src).content
         return name, img
     
     @threadable.threadable
@@ -244,6 +245,17 @@ class User:
 
         return "https://archiveofourown.org/users/%s"%self.username      
 
+    def get(self, *args, **kwargs):
+        """Request a web page and return a Response object"""  
+        
+        if self._session is None:
+            req = requester.request("get", *args, **kwargs)
+        else:
+            req = requester.request("get", *args, **kwargs, session=self._session.session)
+        if req.status_code == 429:
+            raise utils.HTTPError("We are being rate-limited. Try again in a while or reduce the number of requests")
+        return req
+
     def request(self, url):
         """Request a web page and return a BeautifulSoup object.
 
@@ -254,14 +266,8 @@ class User:
             bs4.BeautifulSoup: BeautifulSoup object representing the requested page's html
         """
 
-        if self._session is None:
-            req = requests.get(url)
-        else:
-            req = self._session.session.get(url)
-        if req.status_code == 429:
-            raise utils.HTTPError("We are being rate-limited. Try again in a while or reduce the number of requests")
-        content = req.content
-        soup = BeautifulSoup(content, "lxml")
+        req = self.get(url)
+        soup = BeautifulSoup(req.content, "lxml")
         return soup
 
     @staticmethod

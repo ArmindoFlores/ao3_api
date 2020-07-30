@@ -1,11 +1,11 @@
 from datetime import date
 from functools import cached_property
 
-import requests
 from bs4 import BeautifulSoup
 
 from . import threadable, utils
 from .comments import Comment
+from .requester import requester
 
 
 class Work:
@@ -142,7 +142,7 @@ class Work:
         for download_type in download_btn.findAll("li"):
             if download_type.a.getText() == filetype.upper():
                 url = f"https://archiveofourown.org/{download_type.a.attrs['href']}"
-                req = requests.get(url)
+                req = self.get(url)
                 if req.status_code == 429:
                     raise utils.HTTPError("We are being rate-limited. Try again in a while or reduce the number of requests")
                 if not req.ok:
@@ -617,7 +617,18 @@ class Work:
             str: work URL
         """    
 
-        return "https://archiveofourown.org/works/%i"%self.workid      
+        return "https://archiveofourown.org/works/%i"%self.workid    
+    
+    def get(self, *args, **kwargs):
+        """Request a web page and return a Response object"""  
+        
+        if self._session is None:
+            req = requester.request("get", *args, **kwargs)
+        else:
+            req = requester.request("get", *args, **kwargs, session=self._session.session)
+        if req.status_code == 429:
+            raise utils.HTTPError("We are being rate-limited. Try again in a while or reduce the number of requests")
+        return req
 
     def request(self, url):
         """Request a web page and return a BeautifulSoup object.
@@ -629,14 +640,8 @@ class Work:
             bs4.BeautifulSoup: BeautifulSoup object representing the requested page's html
         """
 
-        if self._session is None:
-            req = requests.get(url)
-        else:
-            req = self._session.session.get(url)
-        if req.status_code == 429:
-            raise utils.HTTPError("We are being rate-limited. Try again in a while or reduce the number of requests")
-        content = req.content
-        soup = BeautifulSoup(content, "lxml")
+        req = self.get(url)
+        soup = BeautifulSoup(req.content, "lxml")
         return soup
 
     @staticmethod

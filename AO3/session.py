@@ -4,9 +4,10 @@ import requests
 from bs4 import BeautifulSoup
 
 from . import threadable, utils
+from .requester import requester
+from .series import Series
 from .users import User
 from .works import Work
-from .series import Series
 
 
 class GuestSession:
@@ -91,22 +92,29 @@ class GuestSession:
             raise utils.UnexpectedResponseError("Couldn't refresh token")
         self.authenticity_token = token.attrs["value"]
         
-    def request(self, url, data={}):
+    def get(self, *args, **kwargs):
+        """Request a web page and return a Response object"""  
+        
+        if self.session is None:
+            req = requester.request("get", *args, **kwargs)
+        else:
+            req = requester.request("get", *args, **kwargs, session=self.session)
+        if req.status_code == 429:
+            raise utils.HTTPError("We are being rate-limited. Try again in a while or reduce the number of requests")
+        return req
+
+    def request(self, url):
         """Request a web page and return a BeautifulSoup object.
 
         Args:
             url (str): Url to request
-            data (dict, optional): Optional data to send in the request. Defaults to {}.
 
         Returns:
             bs4.BeautifulSoup: BeautifulSoup object representing the requested page's html
         """
 
-        req = self.session.get(url, data=data)
-        if req.status_code == 429:
-            raise utils.HTTPError("We are being rate-limited. Try again in a while or reduce the number of requests")
-        content = req.content
-        soup = BeautifulSoup(content, "lxml")
+        req = self.get(url)
+        soup = BeautifulSoup(req.content, "lxml")
         return soup
 
     def post(self, *args, **kwargs):

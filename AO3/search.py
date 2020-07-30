@@ -1,9 +1,9 @@
 from math import ceil
 
-import requests
 from bs4 import BeautifulSoup
 
 from . import threadable, utils
+from .requester import requester
 from .users import User
 from .works import Work
 
@@ -133,7 +133,7 @@ def search(
     
     url = f"https://archiveofourown.org/works/search?{query.string}"
     
-    req = requests.get(url)
+    req = requester.request("get", url)
     if req.status_code == 429:
         raise utils.HTTPError("We are being rate-limited. Try again in a while or reduce the number of requests")
     soup = BeautifulSoup(req.content, features="lxml")

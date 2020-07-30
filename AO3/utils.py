@@ -4,6 +4,8 @@ import pickle
 import requests
 from bs4 import BeautifulSoup
 
+from .requester import requester
+
 
 _FANDOMS = None
 _LANGUAGES = None
@@ -99,6 +101,25 @@ class Constraint:
 
     def __str__(self):
         return self.string
+    
+def set_rqtw(value):
+    """Sets the requests per time window parameter for the AO3 requester"""
+    requester.setRQTW(value)
+    
+def set_timew(value):
+    """Sets the time window parameter for the AO3 requester"""
+    requester.setTimeW(value)
+        
+def limit_requests(limit=True):
+    """Toggles request limiting"""
+    #! NOT TESTED WITH THREADING
+    
+    if limit:
+        #! AO3's code throttles requests at 60rpm, but that doesn't seem to work.
+        requester.setTimeW(300)
+        requester.setRQTW(80)
+    else:
+        requester.setRQTW(-1)
     
 def load_fandoms():
     """Loads fandoms into memory
@@ -400,4 +421,3 @@ def subscribe(workid, worktype, session, unsubscribe=False, subid=None):
             raise AuthError("Invalid authentication token. Try calling session.refresh_auth_token()")
     else:
         raise InvalidIdError(f"Invalid workid / worktype")
-    

@@ -1,10 +1,10 @@
 from datetime import date
 from functools import cached_property
 
-import requests
 from bs4 import BeautifulSoup
 
 from . import threadable, utils
+from .requester import requester
 from .users import User
 from .works import Work
 
@@ -240,23 +240,27 @@ class Series:
             works.append(new)
         return works
     
+    def get(self, *args, **kwargs):
+        """Request a web page and return a Response object"""  
+        
+        if self._session is None:
+            req = requester.request("get", *args, **kwargs)
+        else:
+            req = requester.request("get", *args, **kwargs, session=self._session.session)
+        if req.status_code == 429:
+            raise utils.HTTPError("We are being rate-limited. Try again in a while or reduce the number of requests")
+        return req
+
     def request(self, url):
         """Request a web page and return a BeautifulSoup object.
 
         Args:
             url (str): Url to request
-            data (dict, optional): Optional data to send in the request. Defaults to {}.
 
         Returns:
             bs4.BeautifulSoup: BeautifulSoup object representing the requested page's html
         """
 
-        if self._session is None:
-            req = requests.get(url)
-        else:
-            req = self._session.session.get(url)
-        if req.status_code == 429:
-            raise utils.HTTPError("We are being rate-limited. Try again in a while or reduce the number of requests")
-        content = req.content
-        soup = BeautifulSoup(content, "lxml")
+        req = self.get(url)
+        soup = BeautifulSoup(req.content, "lxml")
         return soup
