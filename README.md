@@ -264,7 +264,7 @@ Comment ID: 312285673
 Replies: 2
 ```
 
-Loading comments takes a very long time so you should try and use it as little as possible. It also causes lots of requests to be sent to the AO3 servers, which might result in getting the error `utils.HTTPError: We are being rate-limited. Try again in a while or reduce the number of requests`. If it happens, you should try to space out your requests or reduce their number.
+Loading comments takes a very long time so you should try and use it as little as possible. It also causes lots of requests to be sent to the AO3 servers, which might result in getting the error `utils.HTTPError: We are being rate-limited. Try again in a while or reduce the number of requests`. If it happens, you should try to space out your requests or reduce their number. There is also the option to enable request limiting using `AO3.utils.limit_requests()`, which make it so you can't make more than x requests in a certain time window. However, right now it doesn't seem to work, as despite AO3's code stating that requests are throttled at 60 per minute, you still get HTTP 429 errors at 40 rpm. 
 
 
 ## Extra
