@@ -116,8 +116,7 @@ def limit_requests(limit=True):
     
     if limit:
         #! AO3's code throttles requests at 60rpm, but that doesn't seem to work.
-        requester.setTimeW(300)
-        requester.setRQTW(80)
+        requester.setRQTW(110)
     else:
         requester.setRQTW(-1)
     

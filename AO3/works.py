@@ -340,6 +340,24 @@ class Work:
     def oneshot(self):
         """Returns True if this work has only one chapter"""
         return self.chapters == 1
+    
+    @cached_property
+    def series(self):
+        """Returns the series this work belongs to"""
+        
+        from .series import Series
+        dd = self._soup.find("dd", {"class": "series"})
+        if dd is None:
+            return []
+        
+        s = []
+        for span in dd.find_all("span", {"class": "position"}):
+            seriesid = int(span.a.attrs["href"].split("/")[-1])
+            seriesname = span.a.getText()
+            series = Series(seriesid, self._session, False)
+            setattr(series, "name", seriesname)
+            s.append(series)
+        return s
 
     @cached_property
     def authors(self):

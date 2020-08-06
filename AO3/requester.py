@@ -6,12 +6,12 @@ import requests
 class Requester:
     """Requester object"""
     
-    def __init__(self, rqtw=-1, timew=360):
+    def __init__(self, rqtw=-1, timew=400):
         """Limits the request rate to prevent HTTP 429 (rate limiting) responses
 
         Args:
             rqm (int, optional): Maximum requests per time window (-1 -> no limit). Defaults to -1.
-            timew (int, optional): Time window (seconds). Defaults to 360.
+            timew (int, optional): Time window (seconds). Defaults to 400.
         """
         
         self._requests = []
