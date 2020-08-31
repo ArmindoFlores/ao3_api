@@ -145,7 +145,6 @@ class Work:
             return tuple(images)
         else:
             raise utils.UnloadedError("Work.load_chapters() must be called first")
-        
     
     def load_chapters(self):
         """Loads the urls for all chapters
