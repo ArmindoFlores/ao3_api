@@ -104,6 +104,49 @@ class Work:
         else:
             raise utils.UnloadedError("Work.load_chapters() must be called first")
     
+    def get_chapter_images(self, chapter):
+        """Gets the chapter text from the specified chapter.
+        Work.load_chapters() must be called first.
+
+        Args:
+            chapter (int): Work chapter
+
+        Raises:
+            utils.UnloadedError: Raises this error if the chapters aren't loaded
+
+        Returns:
+            tuple: Pairs of image urls and the paragraph number
+        """
+        
+        if not self.loaded:
+            raise utils.UnloadedError("Work isn't loaded. Have you tried calling Work.reload()?")
+        if chapter > 0 and chapter <= self.chapters and self.chapters > 1:
+            if len(self.chapter_ids) == self.chapters:
+                chapter_html = self.request("https://archiveofourown.org/works/%i/chapters/%s?view_adult=true"%(self.workid, self.chapter_ids[chapter-1]))
+                div = chapter_html.find("div", {'role': 'article'})
+                images = []
+                line = 0
+                for p in div.findAll("p"):
+                    line += 1
+                    for img in p.findAll("img"):
+                        images.append((img.attrs["src"], line))
+                return tuple(images)
+            else:
+                raise utils.UnloadedError("Work.load_chapters() must be called first")
+
+        elif chapter == 1:
+            div = self._soup.find("div", {'role': 'article'})
+            images = []
+            line = 0
+            for p in div.findAll("p"):
+                line += 1
+                for img in p.findAll("img"):
+                    images.append((img.attrs["src"], line))
+            return tuple(images)
+        else:
+            raise utils.UnloadedError("Work.load_chapters() must be called first")
+        
+    
     def load_chapters(self):
         """Loads the urls for all chapters
 
