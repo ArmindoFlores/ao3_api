@@ -165,7 +165,7 @@ University student, opening documents to write essays but writing this stuff ins
 
 ## Search
 
-To search for works, you can either use the `AO3.search()` function and parse the BeautifulSoup object returned yourself, or use the `AO3.Search``` class to automatically do that for you
+To search for works, you can either use the `AO3.search()` function and parse the BeautifulSoup object returned yourself, or use the `AO3.Search` class to automatically do that for you
 
 ```py3
 import AO3
