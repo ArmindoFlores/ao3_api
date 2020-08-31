@@ -88,13 +88,19 @@ class Work:
             if len(self.chapter_ids) == self.chapters:
                 chapter_html = self.request("https://archiveofourown.org/works/%i/chapters/%s?view_adult=true"%(self.workid, self.chapter_ids[chapter-1]))
                 div = chapter_html.find("div", {'role': 'article'})
-                return str(BeautifulSoup.getText(div))
+                text = ""
+                for p in div.findAll("p"):
+                    text += p.getText() + "\n"
+                return text
             else:
                 raise utils.UnloadedError("Work.load_chapters() must be called first")
 
         elif chapter == 1:
             div = self._soup.find("div", {'role': 'article'})
-            return str(BeautifulSoup.getText(div))
+            text = ""
+            for p in div.findAll("p"):
+                text += p.getText() + "\n"
+            return text
         else:
             raise utils.UnloadedError("Work.load_chapters() must be called first")
     
