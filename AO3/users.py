@@ -35,6 +35,23 @@ class User:
     
     def __eq__(self, other):
         return isinstance(other, User) and other.username == self.username
+    
+    def __getstate__(self):
+        d = {}
+        for attr in self.__dict__:
+            if isinstance(self.__dict__[attr], BeautifulSoup):
+                d[attr] = (self.__dict__[attr].encode(), True)
+            else:
+                d[attr] = (self.__dict__[attr], False)
+        return d
+                
+    def __setstate__(self, d):
+        for attr in d:
+            value, issoup = d[attr]
+            if issoup:
+                self.__dict__[attr] = BeautifulSoup(value, "lxml")
+            else:
+                self.__dict__[attr] = value
         
     def set_session(self, session):
         """Sets the session used to make requests for this work

@@ -45,7 +45,7 @@ class GuestSession:
         
         response = utils.comment(chapterid, comment_text, self, oneshot, commentid)
         return response
-    
+
     
     @threadable.threadable
     def kudos(self, workid):
@@ -170,6 +170,23 @@ class Session(GuestSession):
         self._bookmarks = None
         self._subscriptions = None
         
+    def __getstate__(self):
+        d = {}
+        for attr in self.__dict__:
+            if isinstance(self.__dict__[attr], BeautifulSoup):
+                d[attr] = (self.__dict__[attr].encode(), True)
+            else:
+                d[attr] = (self.__dict__[attr], False)
+        return d
+                
+    def __setstate__(self, d):
+        for attr in d:
+            value, issoup = d[attr]
+            if issoup:
+                self.__dict__[attr] = BeautifulSoup(value, "lxml")
+            else:
+                self.__dict__[attr] = value
+        
     def clear_cache(self):
         for attr in self.__class__.__dict__:
             if isinstance(getattr(self.__class__, attr), cached_property):
@@ -271,16 +288,16 @@ class Session(GuestSession):
             for a in sub.find_all("a"):
                 if 'rel' in a.attrs.keys():
                     if "author" in a['rel']:
-                        authors.append(User(a.string, load=False))
+                        authors.append(User(str(a.string), load=False))
                 elif a['href'].startswith("/works"):
-                    workname = a.string
+                    workname = str(a.string)
                     workid = utils.workid_from_url(a['href'])
                 elif a['href'].startswith("/users"):
                     type_ = "user"
-                    user = User(a.string, load=False)
+                    user = User(str(a.string), load=False)
                 else:
                     type_ = "series"
-                    workname = a.string
+                    workname = str(a.string)
                     series = int(a['href'].split("/")[-1])
             if type_ == "work":
                 new = Work(workid, load=False)
@@ -350,9 +367,9 @@ class Session(GuestSession):
             for a in bookm.h4.find_all("a"):
                 if 'rel' in a.attrs.keys():
                     if "author" in a['rel']:
-                        authors.append(User(a.string, load=False))
+                        authors.append(User(str(a.string), load=False))
                 elif a.attrs["href"].startswith("/works"):
-                    workname = a.string
+                    workname = str(a.string)
                     workid = utils.workid_from_url(a['href'])
             
             new = Work(workid, load=False)

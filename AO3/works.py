@@ -41,6 +41,23 @@ class Work:
     
     def __eq__(self, other):
         return isinstance(other, Work) and other.workid == self.workid
+    
+    def __getstate__(self):
+        d = {}
+        for attr in self.__dict__:
+            if isinstance(self.__dict__[attr], BeautifulSoup):
+                d[attr] = (self.__dict__[attr].encode(), True)
+            else:
+                d[attr] = (self.__dict__[attr], False)
+        return d
+                
+    def __setstate__(self, d):
+        for attr in d:
+            value, issoup = d[attr]
+            if issoup:
+                self.__dict__[attr] = BeautifulSoup(value, "lxml")
+            else:
+                self.__dict__[attr] = value
         
     @threadable.threadable
     def reload(self):
@@ -164,8 +181,8 @@ class Work:
             self.chapter_ids = []
             self.chapter_names = []
             for chapter in all_chapters.findAll("li"):
-                self.chapter_ids.append(chapter.a['href'].split("/")[-1])
-                self.chapter_names.append(chapter.a.string)
+                self.chapter_ids.append(str(chapter.a['href'].split("/")[-1]))
+                self.chapter_names.append(str(chapter.a.string))
         else:
             self.chapter_ids = [""]
             self.chapter_names = [self.title]
