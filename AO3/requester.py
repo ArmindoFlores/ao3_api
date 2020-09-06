@@ -3,6 +3,10 @@ import time
 import requests
 
 
+CUSTOM_USERAGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) \
+AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.83 Safari/537.36"
+
+
 class Requester:
     """Requester object"""
     
@@ -44,6 +48,10 @@ class Requester:
                     else:
                         break
                     
+        if "headers" not in kwargs:
+            kwargs["headers"] = {"User-Agent": CUSTOM_USERAGENT}
+        else:
+            kwargs["headers"]["User-Agent"] = CUSTOM_USERAGENT           
         if "session" in kwargs:
             sess = kwargs["session"]
             del kwargs["session"]
