@@ -8,6 +8,22 @@ from .users import User
 from .works import Work
 
 
+DEFAULT = "_score"
+BEST_MATCH = "_score"
+AUTHOR = "authors_to_sort_on"
+TITLE = "title_to_sort_on"
+DATE_POSTED = "created_at"
+DATE_UPDATED = "revised_at"
+WORD_COUNT = "word_count"
+HITS = "hits"
+KUDOS = "kudos_count"
+COMMENTS = "comments_count"
+BOOKMARKS = "bookmarks_count"
+
+DESCENDING = "desc"
+ASCENDING = "asc"
+
+
 class Search:
     def __init__(
         self,
