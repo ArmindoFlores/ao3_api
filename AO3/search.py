@@ -12,18 +12,20 @@ class Search:
     def __init__(
         self,
         any_field="",
-        title="", 
-        author="", 
-        single_chapter=0, 
-        word_count=None, 
-        language="", 
-        fandoms="", 
+        title="",
+        author="",
+        single_chapter=0,
+        word_count=None,
+        language="",
+        fandoms="",
         hits=None,
         bookmarks=None,
         comments=None,
         completion_status=None,
-        page=1):
-        
+        page=1,
+        sort_column="",
+        sort_direction=""):
+
         self.any_field = any_field
         self.title = title
         self.author = author
@@ -36,7 +38,9 @@ class Search:
         self.comments = comments
         self.completion_status = completion_status
         self.page = page
-        
+        self.sort_column = sort_column
+        self.sort_direction = sort_direction
+
         self.results = None
         self.pages = 0
         self.total_results = 0
@@ -50,7 +54,8 @@ class Search:
         soup = search(
             self.any_field, self.title, self.author, self.single_chapter,
             self.word_count, self.language, self.fandoms, self.hits,
-            self.bookmarks, self.comments, self.completion_status, self.page)
+            self.bookmarks, self.comments, self.completion_status, self.page,
+            self.sort_column, self.sort_direction)
 
         results = soup.find("ol", {'class': 'work index group'})
         works = []
@@ -63,31 +68,32 @@ class Search:
                 elif a.attrs["href"].startswith("/works"):
                     workname = a.string
                     workid = utils.workid_from_url(a['href'])
-                    
+
             new = Work(workid, load=False)
             setattr(new, "authors", authors)
             setattr(new, "title", workname)
             works.append(new)
-            
+
         self.results = works
         maindiv = soup.find("div", {"class": "works-search region", "id": "main"})
         self.total_results = int(maindiv.find("h3", {"class": "heading"}).getText().strip().split(" ")[0])
         self.pages = ceil(self.total_results / 20)
-        
-        
+
 def search(
     any_field="",
-    title="", 
-    author="", 
-    single_chapter=0, 
-    word_count=None, 
-    language="", 
-    fandoms="", 
+    title="",
+    author="",
+    single_chapter=0,
+    word_count=None,
+    language="",
+    fandoms="",
     hits=None,
     bookmarks=None,
     comments=None,
     completion_status=None,
-    page=1):
+    page=1,
+    sort_column="",
+    sort_direction=""):
     """Returns the results page for the search as a Soup object
 
     Args:
@@ -102,6 +108,8 @@ def search(
         bookmarks (AO3.utils.Constraint, optional): Number of bookmarks. Defaults to None.
         comments (AO3.utils.Constraint, optional): Number of comments. Defaults to None.
         page (int, optional): Page number. Defaults to 1.
+        sort_column (str, optional): Which column to sort on. Defaults to "".
+        sort_direction (str, optional): Which direction to sort. Defaults to "".
 
     Returns:
         bs4.BeautifulSoup: Search result's soup
@@ -127,12 +135,16 @@ def search(
     if bookmarks is not None:
         query.add_field(f"work_search[bookmarks_count]={bookmarks}")
     if comments is not None:
-        query.add_field(f"work_search[comments_count]={comments}")   
+        query.add_field(f"work_search[comments_count]={comments}")
     if completion_status is not None:
-        query.add_field(f"work_search[complete]={'T' if completion_status else 'F'}")     
-    
+        query.add_field(f"work_search[complete]={'T' if completion_status else 'F'}")
+    if sort_column != "":
+        query.add_field(f"work_search[sort_column]={sort_column}")
+    if sort_direction != "":
+        query.add_field(f"work_search[sort_direction]={sort_direction}")
+
     url = f"https://archiveofourown.org/works/search?{query.string}"
-    
+
     req = requester.request("get", url)
     if req.status_code == 429:
         raise utils.HTTPError("We are being rate-limited. Try again in a while or reduce the number of requests")
