@@ -135,6 +135,7 @@ user = AO3.User("bothersomepotato")
 print(user.url)
 print(user.bio)
 print(user.works)  # Number of works published
+print(user.bookmarks)  # Number of works bookmarked
 ```
 
 ```
