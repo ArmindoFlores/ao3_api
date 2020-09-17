@@ -26,7 +26,9 @@ class User:
         self._session = session
         self._soup_works = None
         self._soup_profile = None
+        self._soup_bookmarks = None
         self._works = None
+        self._bookmarks = None
         if load:
             self.reload()
             
@@ -81,11 +83,19 @@ class User:
         @threadable.threadable
         def req_profile(username): 
             self._soup_profile = self.request(f"https://archiveofourown.org/users/{username}/profile")
+
+        @threadable.threadable
+        def req_bookmarks(username): 
+            self._soup_bookmarks = self.request(f"https://archiveofourown.org/users/{username}/bookmarks")
             
-        w, p = req_works(self.username, threaded=True), req_profile(self.username, threaded=True)
-        w.join()
-        p.join()
+        rs = [req_works(self.username, threaded=True),
+              req_profile(self.username, threaded=True),
+              req_bookmarks(self.username, threaded=True)]
+        for r in rs:
+            r.join()
+
         self._works = None
+        self._bookmarks = None
         
     def get_avatar(self):
         """Returns a tuple containing the name of the file and its data
@@ -240,6 +250,84 @@ class User:
             setattr(new, "authors", authors)
             if new not in self._works:
                 self._works.append(new)
+
+    @cached_property
+    def bookmarks(self):
+        """Returns the number of works user has bookmarked
+
+        Returns:
+            int: Number of bookmarks 
+        """
+
+        div = self._soup_bookmarks.find("div", {'id': 'inner'})
+        span = div.find("span", {'class': 'current'}).getText().replace("(", "").replace(")", "")
+        n = span.split(" ")[1]
+        return int(self.str_format(n))   
+
+    @cached_property
+    def _bookmarks_pages(self):
+        pages = self._soup_bookmarks.find("ol", {"title": "pagination"})
+        if pages is None:
+            return 1
+        n = 1
+        for li in pages.findAll("li"):
+            text = li.getText()
+            if text.isdigit():
+                n = int(text)
+        return n
+
+    def get_bookmarks(self, use_threading=False):
+        """
+        Get this user's bookmarked works. Loads them if they haven't been previously
+
+        Returns:
+            list: List of works
+        """
+        
+        if self._bookmarks is None:
+            if use_threading:
+                self.load_bookmarks_threaded()
+            else:
+                self._bookmarks = []
+                for page in range(self._bookmarks_pages):
+                    self._load_bookmarks(page=page+1)
+        return self._bookmarks
+    
+    @threadable.threadable
+    def load_bookmarks_threaded(self):
+        """
+        Get the user's bookmarks using threads.
+        This function is threadable.
+        """ 
+        
+        threads = []
+        self._bookmarks = []
+        for page in range(self._bookmarks_pages):
+            threads.append(self._load_bookmarks(page=page+1, threaded=True))
+        for thread in threads:
+            thread.join()
+
+    @threadable.threadable
+    def _load_bookmarks(self, page=1):
+        from .works import Work
+        self._soup_bookmarks = self.request(f"https://archiveofourown.org/users/{self.username}/bookmarks?page={page}")
+            
+        ol = self._soup_bookmarks.find("ol", {'class': 'bookmark index group'})
+
+        for work in ol.find_all("li", {'role': 'article'}):
+            authors = []
+            for a in work.h4.find_all("a"):
+                if 'rel' in a.attrs.keys():
+                    if "author" in a['rel']:
+                        authors.append(User(a.string, load=False))
+                elif a.attrs["href"].startswith("/works"):
+                    name = a.string
+                    id_ = utils.workid_from_url(a['href'])
+            new = Work(id_, load=False)
+            setattr(new, "title", name)
+            setattr(new, "authors", authors)
+            if new not in self._bookmarks:
+                self._bookmarks.append(new)
     
     @cached_property
     def bio(self):
