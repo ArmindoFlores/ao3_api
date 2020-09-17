@@ -238,6 +238,8 @@ class User:
 
         for work in ol.find_all("li", {'role': 'article'}):
             authors = []
+            if work.h4 is None:
+                continue
             for a in work.h4.find_all("a"):
                 if 'rel' in a.attrs.keys():
                     if "author" in a['rel']:
@@ -316,6 +318,8 @@ class User:
 
         for work in ol.find_all("li", {'role': 'article'}):
             authors = []
+            if work.h4 is None:
+                continue
             for a in work.h4.find_all("a"):
                 if 'rel' in a.attrs.keys():
                     if "author" in a['rel']:

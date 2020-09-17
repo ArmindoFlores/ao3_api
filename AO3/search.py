@@ -77,6 +77,8 @@ class Search:
         works = []
         for work in results.find_all("li", {'class': 'work blurb group'}):
             authors = []
+            if work.h4 is None:
+                continue
             for a in work.h4.find_all("a"):
                 if 'rel' in a.attrs.keys():
                     if "author" in a['rel']:
