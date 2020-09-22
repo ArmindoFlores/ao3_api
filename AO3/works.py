@@ -263,8 +263,8 @@ class Work:
             
             chapter_id = self.chapter_ids[chapter-1]
             
-        string = "work_id" if self.oneshot else "chapter_id" 
-        url = f"https://archiveofourown.org/comments/show_comments?page=%d&{string}={chapter_id}"
+        string = "works" if self.oneshot else "chapters" 
+        url = f"https://archiveofourown.org/{string}/{chapter_id}?page=%d&show_comments=true&view_adult=true"
         soup = self.request(url%1)
         
         pages = 0
