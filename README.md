@@ -90,8 +90,7 @@ series = AO3.Series(1295090)
 works = []
 threads = []
 start = time.time()
-for workid, _, _ in series.work_list:
-    work = AO3.Work(workid, load=False)
+for work in series.work_list:
     works.append(work)
     threads.append(work.reload(threaded=True))
 for thread in threads:
