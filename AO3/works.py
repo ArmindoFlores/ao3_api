@@ -544,7 +544,7 @@ class Work:
 
         title = self._soup.find("div", {'class': 'preface group'})
         if title is not None:
-            return str(title.h2.string.strip())
+            return str(title.h2.text.strip())
         return ""
     
     @cached_property
