@@ -35,7 +35,7 @@ class Search:
         word_count=None,
         language="",
         fandoms="",
-        rating="",
+        rating=None,
         hits=None,
         bookmarks=None,
         comments=None,
@@ -108,7 +108,7 @@ def search(
     word_count=None,
     language="",
     fandoms="",
-    rating="",
+    rating=None,
     hits=None,
     bookmarks=None,
     comments=None,
@@ -126,7 +126,7 @@ def search(
         word_count (AO3.utils.Constraint, optional): Word count. Defaults to None.
         language (str, optional): Work language. Defaults to "".
         fandoms (str, optional): Fandoms included in the work. Defaults to "".
-        rating (int, optional): Rating for the work. 9 for Not Rated, 10 for General Audiences, 11 for Teen And Up Audiences, 12 for Mature, 13 for Explicit. Defaults to "".
+        rating (int, optional): Rating for the work. 9 for Not Rated, 10 for General Audiences, 11 for Teen And Up Audiences, 12 for Mature, 13 for Explicit. Defaults to None.
         hits (AO3.utils.Constraint, optional): Number of hits. Defaults to None.
         bookmarks (AO3.utils.Constraint, optional): Number of bookmarks. Defaults to None.
         comments (AO3.utils.Constraint, optional): Number of comments. Defaults to None.
@@ -153,7 +153,7 @@ def search(
         query.add_field(f"work_search[language_id]={language}")
     if fandoms != "":
         query.add_field(f"work_search[fandom_names]={fandoms}")
-    if rating != "":
+    if rating is not None:
         query.add_field(f"work_search[rating_ids]={rating}")
     if hits is not None:
         query.add_field(f"work_search[hits_count]={hits}")
