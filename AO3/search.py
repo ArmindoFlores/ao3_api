@@ -77,6 +77,12 @@ class Search:
             self.sort_column, self.sort_direction)
 
         results = soup.find("ol", {'class': 'work index group'})
+        if results is None and soup.find("p", text="No results found. You may want to edit your search to make it less specific.") is not None:
+            self.results = []
+            self.total_results = 0
+            self.pages = 0
+            return
+
         works = []
         for work in results.find_all("li", {'class': 'work blurb group'}):
             authors = []
