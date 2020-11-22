@@ -39,14 +39,21 @@ class Requester:
             requests.Response: Response object
         """
         
-        if self._rqtw != -1:
-            while len(self._requests) >= self._rqtw:
-                t = time.time()
-                while len(self._requests):
-                    if t-self._requests[0] >= self._timew:
-                        self._requests.pop(0)
-                    else:
-                        break
+        # We've made a bunch of requests, time to rate limit?
+        if self._rqtw != -1 and len(self._requests) >= self._rqtw:
+            t = time.time()
+            # Reduce list to only requests made within the current time window
+            while len(self._requests):
+                if t-self._requests[0] >= self._timew:
+                    self._requests.pop(0) # Older than window, forget about it
+                else:
+                    break # Inside window, the rest of them must be too
+            # Have we used up all available requests within our window?
+            if len(self._requests) >= self._rqtw: # Yes
+                # Wait until the oldest request exits the window, giving us a slot for the new one
+                time.sleep(self._requests[0] + self._timew - t)
+                # Now outside window, drop it
+                self._requests.pop(0)
                     
         if "headers" not in kwargs:
             kwargs["headers"] = {"User-Agent": CUSTOM_USERAGENT}
