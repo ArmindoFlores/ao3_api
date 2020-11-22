@@ -3,10 +3,10 @@ import os
 import pathlib
 import pickle
 
-import requests
 from bs4 import BeautifulSoup
 
 from . import threadable, utils
+from .requester import requester
 
 
 def _download_languages():
@@ -21,7 +21,7 @@ def _download_languages():
             os.mkdir(language_path)
         url = "https://archiveofourown.org/languages"
         print(f"Downloading from {url}")
-        req = requests.get(url)
+        req = requester.request("get", url)
         soup = BeautifulSoup(req.content, "lxml")
         for dt in soup.find("dl", {"class": "language index group"}).findAll("dt"):
             if dt.a is not None: 
@@ -47,7 +47,7 @@ def _download_fandom(fandom_key, name):
             os.mkdir(fandom_path)
         url = f"https://archiveofourown.org/media/{fandom_key}/fandoms"
         print(f"Downloading from {url}")
-        req = requests.get(url)
+        req = requester.request("get", url)
         soup = BeautifulSoup(req.content, "lxml")
         for fandom in soup.find("ol", {"class": "alphabet fandom index group"}).findAll("a", {"class": "tag"}):
             fandoms.append(fandom.getText())
