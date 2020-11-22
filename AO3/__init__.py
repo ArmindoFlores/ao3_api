@@ -7,4 +7,4 @@ from .users import User
 from .works import Work
 
 
-VERSION = "2.0.4"
+VERSION = "2.0.5"
