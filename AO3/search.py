@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 
 from . import threadable, utils
 from .requester import requester
+from .series import Series
 from .users import User
 from .works import Work
 
@@ -79,9 +80,10 @@ class Search:
         results = soup.find("ol", {'class': 'work index group'})
         works = []
         for work in results.find_all("li", {'class': 'work blurb group'}):
-            authors = []
             if work.h4 is None:
                 continue
+
+            authors = []
             for a in work.h4.find_all("a"):
                 if 'rel' in a.attrs.keys():
                     if "author" in a['rel']:
@@ -90,8 +92,62 @@ class Search:
                     workname = a.string
                     workid = utils.workid_from_url(a['href'])
 
+            fandoms = []
+            for a in work.find("h5", class_="fandoms").find_all("a"):
+                fandoms.append(a.string)
+
+            warnings = []
+            relationships = []
+            characters = []
+            freeforms = []
+            for a in work.find(class_="tags").find_all("li"):
+                if "warnings" in a['class']:
+                    warnings.append(a.text)
+                elif "relationships" in a['class']:
+                    relationships.append(a.text)
+                elif "characters" in a['class']:
+                    characters.append(a.text)
+                elif "freeforms" in a['class']:
+                    freeforms.append(a.text)
+
+            reqtags = work.find(class_="required-tags")
+            rating = reqtags.find(class_="rating").text
+            categories = reqtags.find(class_="category").text.split(", ")
+
+            summary_html = work.find(class_="userstuff summary")
+            summary = summary_html.text if summary_html else ""
+
+            series = []
+            series_list = work.find(class_="series")
+            if series_list is not None:
+                for a in series_list.find_all("a"):
+                    seriesid = int(a.attrs['href'].split("/")[-1])
+                    seriesname = a.text
+                    s = Series(seriesid, load=False)
+                    setattr(s, "name", seriesname)
+                    series.append(s)
+
+            stats = work.find(class_="stats")
+            language = stats.find("dd", class_="language").text
+            words = int(stats.find("dd", class_="words").text.replace(",", ""))
+            chapters = int(stats.find("dd", class_="chapters").text.split('/')[0].replace(",", ""))
+            hits = int(stats.find("dd", class_="hits").text.replace(",", ""))
+
             new = Work(workid, load=False)
             setattr(new, "authors", authors)
+            setattr(new, "fandoms", fandoms)
+            setattr(new, "warnings", warnings)
+            setattr(new, "relationships", relationships)
+            setattr(new, "characters", characters)
+            setattr(new, "tags", freeforms)
+            setattr(new, "rating", rating)
+            setattr(new, "categories", categories)
+            setattr(new, "summary", summary)
+            setattr(new, "series", series)
+            setattr(new, "language", language)
+            setattr(new, "words", words)
+            setattr(new, "chapters", chapters)
+            setattr(new, "hits", chapters)
             setattr(new, "title", workname)
             works.append(new)
 
