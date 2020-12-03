@@ -349,7 +349,6 @@ class Session(GuestSession):
         soup = self.request(url)
         history = soup.find("ol", {'class': 'reading work index group'})
         for item in history.find_all("li", {'class': 'reading work blurb group'}):
-            # print(item)
             authors = []
             for a in item.h4.find_all("a"):
                 if 'rel' in a.attrs.keys():
@@ -359,10 +358,9 @@ class Session(GuestSession):
                     workname = str(a.string)
                     workid = utils.workid_from_url(a['href'])
 
-            visited_date = ""
+            visited_date = None
             visited_num = 1
             for viewed in item.find_all("h4", {'class': "viewed heading" }):
-                # print(type(viewed))
                 data_string = str(viewed)
                 date_str = re.search('<span>Last visited:</span> (\d{2} .+ \d{4})', data_string)
                 if date_str is not None:
