@@ -1,4 +1,6 @@
 from functools import cached_property
+import re
+import datetime
 
 import requests
 from bs4 import BeautifulSoup
@@ -166,9 +168,11 @@ class Session(GuestSession):
 
         self._subscriptions_url = "https://archiveofourown.org/users/{0}/subscriptions?page={1:d}"
         self._bookmarks_url = "https://archiveofourown.org/users/{0}/bookmarks?page={1:d}"
+        self._history_url = "https://archiveofourown.org/users/{0}/readings?page={1:d}"
         
         self._bookmarks = None
         self._subscriptions = None
+        self._history = None
         
     def __getstate__(self):
         d = {}
@@ -311,7 +315,74 @@ class Session(GuestSession):
                 setattr(new, "name", workname)
                 setattr(new, "authors", authors)
                 self._subscriptions.append(new)
-    
+
+    @cached_property
+    def _history_pages(self):
+        url = self._history_url.format(self.username, 1)
+        soup = self.request(url)
+        pages = soup.find("ol", {"title": "pagination"})
+        if pages is None:
+            return 1
+        n = 1
+        for li in pages.findAll("li"):
+            text = li.getText()
+            if text.isdigit():
+                n = int(text)
+        return n
+
+    def get_history(self):
+        """
+        Get history works. Loads them if they haven't been previously
+
+        Returns:
+            list: List of tuples (workid, workname, authors)
+        """
+        
+        if self._history is None:
+            self._history = []
+            for page in range(self._history_pages):
+                self._load_history(page=page+1)
+        return self._history
+
+    def _load_history(self, page=1):       
+        url = self._history_url.format(self.username, page)
+        soup = self.request(url)
+        history = soup.find("ol", {'class': 'reading work index group'})
+        for item in history.find_all("li", {'class': 'reading work blurb group'}):
+            # print(item)
+            authors = []
+            for a in item.h4.find_all("a"):
+                if 'rel' in a.attrs.keys():
+                    if "author" in a['rel']:
+                        authors.append(User(str(a.string), load=False))
+                elif a.attrs["href"].startswith("/works"):
+                    workname = str(a.string)
+                    workid = utils.workid_from_url(a['href'])
+
+            visited_date = ""
+            visited_num = 1
+            for viewed in item.find_all("h4", {'class': "viewed heading" }):
+                # print(type(viewed))
+                data_string = str(viewed)
+                date_str = re.search('<span>Last visited:</span> (\d{2} .+ \d{4})', data_string)
+                if date_str is not None:
+                    raw_date = date_str.group(1)
+                    date_time_obj = datetime.datetime.strptime(date_str.group(1), '%d %b %Y')
+                    visited_date = date_time_obj
+                    
+                visited_str = re.search('Visited (\d+) times', data_string)
+                if visited_str is not None:
+                    visited_num = int(visited_str.group(1))
+                
+            
+            new = Work(workid, load=False)
+            setattr(new, "title", workname)
+            setattr(new, "authors", authors)
+            hist_item = [ new, visited_num, visited_date ]
+            # print(hist_item)
+            if new not in self._history:
+                self._history.append(hist_item)
+                
     @cached_property
     def _bookmark_pages(self):
         url = self._bookmarks_url.format(self.username, 1)
