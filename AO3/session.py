@@ -335,7 +335,7 @@ class Session(GuestSession):
         Get history works. Loads them if they haven't been previously
 
         Returns:
-            list: List of tuples (workid, workname, authors)
+            list: List of tuples (Work, number-of-visits, datetime-last-visited)
         """
         
         if self._history is None:
