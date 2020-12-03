@@ -353,12 +353,11 @@ class Session(GuestSession):
         soup = self.request(url)
         history = soup.find("ol", {'class': 'reading work index group'})
         for item in history.find_all("li", {'class': 'reading work blurb group'}):
-            authors = []
+            # authors = []
+            workname = None
+            workid = None
             for a in item.h4.find_all("a"):
-                if 'rel' in a.attrs.keys():
-                    if "author" in a['rel']:
-                        authors.append(User(str(a.string), load=False))
-                elif a.attrs["href"].startswith("/works"):
+                if a.attrs["href"].startswith("/works"):
                     workname = str(a.string)
                     workid = utils.workid_from_url(a['href'])
 
@@ -376,14 +375,15 @@ class Session(GuestSession):
                 if visited_str is not None:
                     visited_num = int(visited_str.group(1))
                 
-            
-            new = Work(workid, load=False)
-            setattr(new, "title", workname)
-            setattr(new, "authors", authors)
-            hist_item = [ new, visited_num, visited_date ]
-            # print(hist_item)
-            if new not in self._history:
-                self._history.append(hist_item)
+
+            if workname != None and workid != None:
+                new = Work(workid, load=False)
+                setattr(new, "title", workname)
+                # setattr(new, "authors", authors)
+                hist_item = [ new, visited_num, visited_date ]
+                # print(hist_item)
+                if new not in self._history:
+                    self._history.append(hist_item)
                 
     @cached_property
     def _bookmark_pages(self):
