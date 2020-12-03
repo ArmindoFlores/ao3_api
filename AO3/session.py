@@ -1,6 +1,7 @@
 from functools import cached_property
 import re
 import datetime
+import time
 
 import requests
 from bs4 import BeautifulSoup
@@ -330,9 +331,9 @@ class Session(GuestSession):
                 n = int(text)
         return n
 
-    def get_history(self):
+    def get_history(self, hist_sleep=0, max_pages=None):
         """
-        Get history works. Loads them if they haven't been previously
+        Get history works. Loads them if they haven't been previously, takes two arguments the first hist_sleep is an int and is a sleep to run between pages of history to load to avoid hitting the rate limiter, the second is an int of the maximum number of pages of history to load, by default this is None so loads them all.
 
         Returns:
             list: List of tuples (Work, number-of-visits, datetime-last-visited)
@@ -342,6 +343,9 @@ class Session(GuestSession):
             self._history = []
             for page in range(self._history_pages):
                 self._load_history(page=page+1)
+                if max_pages is not None and page+1 >= max_pages:
+                    return self._history
+                time.sleep(hist_sleep)
         return self._history
 
     def _load_history(self, page=1):       
