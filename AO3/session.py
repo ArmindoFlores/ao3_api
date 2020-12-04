@@ -331,13 +331,14 @@ class Session(GuestSession):
                 n = int(text)
         return n
 
-    def get_history(self, hist_sleep=0, max_pages=None, timeout_sleep=None):
+    def get_history(self, hist_sleep=0, start_page=0, max_pages=None, timeout_sleep=None):
         """
         Get history works. Loads them if they haven't been previously.
 
         Arguments:
           hist_sleep (int to sleep between requests)
-          max_pages  (int, maximum number of pages of history to request)
+          start_page (int for page to start on, zero-indexed)
+          max_pages  (int for page to end on, zero-indexed)
           timeout_sleep (int, if set will attempt to recovery from http errors, likely timeouts)
 
  takes two arguments the first hist_sleep is an int and is a sleep to run between pages of history to load to avoid hitting the rate limiter, the second is an int of the maximum number of pages of history to load, by default this is None so loads them all.
@@ -348,7 +349,7 @@ class Session(GuestSession):
         
         if self._history is None:
             self._history = []
-            for page in range(self._history_pages):
+            for page in range(start_page, self._history_pages):
                 # If we are attempting to recover from errors then
                 # catch and loop, otherwise just call and go
                 if timeout_sleep is None:
@@ -365,7 +366,7 @@ class Session(GuestSession):
                             time.sleep(timeout_sleep)
 
                 # Check for maximum history page load
-                if max_pages is not None and page+1 >= max_pages:
+                if max_pages is not None and page >= max_pages:
                     return self._history
 
                 # Again attempt to avoid rate limiter, sleep for a few
