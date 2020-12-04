@@ -359,7 +359,8 @@ class Session(GuestSession):
                         try:
                             self._load_history(page=page+1)
                             loaded = True
-                        except AO3.utils.HTTPError:
+                        except utils.HTTPError:
+                            #print("session.py being rate limited, sleeping")
                             time.sleep(timeout_sleep)
 
                 # Check for maximum history page load
