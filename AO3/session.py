@@ -360,11 +360,11 @@ class Session(GuestSession):
                     while loaded == False:
                         try:
                             self._load_history(page=page+1)
-                            print(f"Read history page {page+1}")
+                            # print(f"Read history page {page+1}")
                             loaded = True
 
                         except utils.HTTPError:
-                            print(f"History being rate limited, sleeping for {timeout_sleep} seconds")
+                            # print(f"History being rate limited, sleeping for {timeout_sleep} seconds")
                             time.sleep(timeout_sleep)
 
                 # Check for maximum history page load
