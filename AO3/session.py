@@ -331,7 +331,7 @@ class Session(GuestSession):
                 n = int(text)
         return n
 
-    def get_history(self, hist_sleep=0, start_page=0, max_pages=None, timeout_sleep=None):
+    def get_history(self, hist_sleep=3, start_page=0, max_pages=None, timeout_sleep=60):
         """
         Get history works. Loads them if they haven't been previously.
 
@@ -339,7 +339,7 @@ class Session(GuestSession):
           hist_sleep (int to sleep between requests)
           start_page (int for page to start on, zero-indexed)
           max_pages  (int for page to end on, zero-indexed)
-          timeout_sleep (int, if set will attempt to recovery from http errors, likely timeouts)
+          timeout_sleep (int, if set will attempt to recovery from http errors, likely timeouts, if set to None will just attempt to load)
 
  takes two arguments the first hist_sleep is an int and is a sleep to run between pages of history to load to avoid hitting the rate limiter, the second is an int of the maximum number of pages of history to load, by default this is None so loads them all.
 
@@ -354,6 +354,7 @@ class Session(GuestSession):
                 # catch and loop, otherwise just call and go
                 if timeout_sleep is None:
                     self._load_history(page=page+1)
+                    
                 else:
                     loaded=False
                     while loaded == False:
@@ -361,6 +362,7 @@ class Session(GuestSession):
                             self._load_history(page=page+1)
                             print(f"Read history page {page+1}")
                             loaded = True
+
                         except utils.HTTPError:
                             print(f"History being rate limited, sleeping for {timeout_sleep} seconds")
                             time.sleep(timeout_sleep)
@@ -371,7 +373,9 @@ class Session(GuestSession):
 
                 # Again attempt to avoid rate limiter, sleep for a few
                 # seconds between page requests.
-                time.sleep(hist_sleep)
+                if hist_sleep is not None and hist_sleep > 0:
+                    time.sleep(hist_sleep)
+
         return self._history
 
     def _load_history(self, page=1):       
