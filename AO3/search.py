@@ -147,6 +147,8 @@ def search(
         query.add_field(f"work_search[title]={title}")
     if author != "":
         query.add_field(f"work_search[creators]={author}")
+    if single_chapter != 0:
+        query.add_field(f"work_search[single_chapter]={single_chapter}")
     if word_count is not None:
         query.add_field(f"work_search[word_count]={word_count}")
     if language != "":
