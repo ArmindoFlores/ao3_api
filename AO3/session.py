@@ -1,4 +1,7 @@
 from functools import cached_property
+import re
+import datetime
+import time
 
 import requests
 from bs4 import BeautifulSoup
@@ -166,9 +169,11 @@ class Session(GuestSession):
 
         self._subscriptions_url = "https://archiveofourown.org/users/{0}/subscriptions?page={1:d}"
         self._bookmarks_url = "https://archiveofourown.org/users/{0}/bookmarks?page={1:d}"
+        self._history_url = "https://archiveofourown.org/users/{0}/readings?page={1:d}"
         
         self._bookmarks = None
         self._subscriptions = None
+        self._history = None
         
     def __getstate__(self):
         d = {}
@@ -311,7 +316,105 @@ class Session(GuestSession):
                 setattr(new, "name", workname)
                 setattr(new, "authors", authors)
                 self._subscriptions.append(new)
-    
+
+    @cached_property
+    def _history_pages(self):
+        url = self._history_url.format(self.username, 1)
+        soup = self.request(url)
+        pages = soup.find("ol", {"title": "pagination"})
+        if pages is None:
+            return 1
+        n = 1
+        for li in pages.findAll("li"):
+            text = li.getText()
+            if text.isdigit():
+                n = int(text)
+        return n
+
+    def get_history(self, hist_sleep=3, start_page=0, max_pages=None, timeout_sleep=60):
+        """
+        Get history works. Loads them if they haven't been previously.
+
+        Arguments:
+          hist_sleep (int to sleep between requests)
+          start_page (int for page to start on, zero-indexed)
+          max_pages  (int for page to end on, zero-indexed)
+          timeout_sleep (int, if set will attempt to recovery from http errors, likely timeouts, if set to None will just attempt to load)
+
+ takes two arguments the first hist_sleep is an int and is a sleep to run between pages of history to load to avoid hitting the rate limiter, the second is an int of the maximum number of pages of history to load, by default this is None so loads them all.
+
+        Returns:
+            list: List of tuples (Work, number-of-visits, datetime-last-visited)
+        """
+        
+        if self._history is None:
+            self._history = []
+            for page in range(start_page, self._history_pages):
+                # If we are attempting to recover from errors then
+                # catch and loop, otherwise just call and go
+                if timeout_sleep is None:
+                    self._load_history(page=page+1)
+                    
+                else:
+                    loaded=False
+                    while loaded == False:
+                        try:
+                            self._load_history(page=page+1)
+                            # print(f"Read history page {page+1}")
+                            loaded = True
+
+                        except utils.HTTPError:
+                            # print(f"History being rate limited, sleeping for {timeout_sleep} seconds")
+                            time.sleep(timeout_sleep)
+
+                # Check for maximum history page load
+                if max_pages is not None and page >= max_pages:
+                    return self._history
+
+                # Again attempt to avoid rate limiter, sleep for a few
+                # seconds between page requests.
+                if hist_sleep is not None and hist_sleep > 0:
+                    time.sleep(hist_sleep)
+
+        return self._history
+
+    def _load_history(self, page=1):       
+        url = self._history_url.format(self.username, page)
+        soup = self.request(url)
+        history = soup.find("ol", {'class': 'reading work index group'})
+        for item in history.find_all("li", {'class': 'reading work blurb group'}):
+            # authors = []
+            workname = None
+            workid = None
+            for a in item.h4.find_all("a"):
+                if a.attrs["href"].startswith("/works"):
+                    workname = str(a.string)
+                    workid = utils.workid_from_url(a['href'])
+
+            visited_date = None
+            visited_num = 1
+            for viewed in item.find_all("h4", {'class': "viewed heading" }):
+                data_string = str(viewed)
+                date_str = re.search('<span>Last visited:</span> (\d{2} .+ \d{4})', data_string)
+                if date_str is not None:
+                    raw_date = date_str.group(1)
+                    date_time_obj = datetime.datetime.strptime(date_str.group(1), '%d %b %Y')
+                    visited_date = date_time_obj
+                    
+                visited_str = re.search('Visited (\d+) times', data_string)
+                if visited_str is not None:
+                    visited_num = int(visited_str.group(1))
+                
+
+            if workname != None and workid != None:
+                new = Work(workid, load=False)
+                setattr(new, "title", workname)
+                # setattr(new, "authors", authors)
+                hist_item = [ new, visited_num, visited_date ]
+                # print(hist_item)
+                if new not in self._history:
+                    self._history.append(hist_item)
+                
     @cached_property
     def _bookmark_pages(self):
         url = self._bookmarks_url.format(self.username, 1)
