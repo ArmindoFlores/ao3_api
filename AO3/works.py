@@ -434,10 +434,10 @@ class Work:
 
         from .users import User
         authors = self._soup.find_all("h3", {'class': 'byline heading'})
-        formattedAuthors = authors[0].text.replace("\n", "").split(", ")
+        formatted_authors = authors[0].text.replace("\n", "").split(", ")
         author_list = []
         if authors is not None:
-            for author in formattedAuthors:
+            for author in formatted_authors:
                 user = User(author, load=False)
                 author_list.append(user)
 
