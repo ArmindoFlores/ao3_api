@@ -1,7 +1,7 @@
-from functools import cached_property
-import re
 import datetime
+import re
 import time
+from functools import cached_property
 
 import requests
 from bs4 import BeautifulSoup
