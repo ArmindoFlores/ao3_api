@@ -433,13 +433,14 @@ class Work:
         """
 
         from .users import User
-        authors = self._soup.find_all("a", {'rel': 'author'})
+        authors = self._soup.find_all("h3", {'class': 'byline heading'})
+        formatted_authors = authors[0].text.replace("\n", "").split(", ")
         author_list = []
         if authors is not None:
-            for author in authors:
-                user = User(author.string, load=False)
+            for author in formatted_authors:
+                user = User(author, load=False)
                 author_list.append(user)
-            
+
         return author_list
 
     @cached_property
