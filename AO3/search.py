@@ -32,7 +32,7 @@ class Search:
         any_field="",
         title="",
         author="",
-        single_chapter=0,
+        single_chapter=False,
         word_count=None,
         language="",
         fandoms="",
@@ -166,7 +166,7 @@ def search(
     any_field="",
     title="",
     author="",
-    single_chapter=0,
+    single_chapter=False,
     word_count=None,
     language="",
     fandoms="",
@@ -184,7 +184,7 @@ def search(
         any_field (str, optional): Generic search. Defaults to "".
         title (str, optional): Title of the work. Defaults to "".
         author (str, optional): Authors of the work. Defaults to "".
-        single_chapter (int, optional): Only include one-shots. Defaults to 0.
+        single_chapter (bool, optional): Only include one-shots. Defaults to False.
         word_count (AO3.utils.Constraint, optional): Word count. Defaults to None.
         language (str, optional): Work language. Defaults to "".
         fandoms (str, optional): Fandoms included in the work. Defaults to "".
@@ -209,8 +209,8 @@ def search(
         query.add_field(f"work_search[title]={title}")
     if author != "":
         query.add_field(f"work_search[creators]={author}")
-    if single_chapter != 0:
-        query.add_field(f"work_search[single_chapter]={single_chapter}")
+    if single_chapter:
+        query.add_field(f"work_search[single_chapter]=1")
     if word_count is not None:
         query.add_field(f"work_search[word_count]={word_count}")
     if language != "":
