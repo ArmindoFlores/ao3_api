@@ -10,12 +10,13 @@ AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.83 Safari/537.36"
 class Requester:
     """Requester object"""
     
-    def __init__(self, rqtw=-1, timew=400):
-        """Limits the request rate to prevent HTTP 429 (rate limiting) responses
+    def __init__(self, rqtw=-1, timew=60):
+        """Limits the request rate to prevent HTTP 429 (rate limiting) responses.
+        12 request per minute seems to be the limit.
 
         Args:
             rqm (int, optional): Maximum requests per time window (-1 -> no limit). Defaults to -1.
-            timew (int, optional): Time window (seconds). Defaults to 400.
+            timew (int, optional): Time window (seconds). Defaults to 60.
         """
         
         self._requests = []
