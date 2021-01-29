@@ -170,6 +170,7 @@ class Session(GuestSession):
         self._subscriptions_url = "https://archiveofourown.org/users/{0}/subscriptions?page={1:d}"
         self._bookmarks_url = "https://archiveofourown.org/users/{0}/bookmarks?page={1:d}"
         self._history_url = "https://archiveofourown.org/users/{0}/readings?page={1:d}"
+        self._statistics_url = "https://archiveofourown.org/users/{0}/stats"
         
         self._bookmarks = None
         self._subscriptions = None
@@ -480,6 +481,29 @@ class Session(GuestSession):
             setattr(new, "authors", authors)
             if new not in self._bookmarks:
                 self._bookmarks.append(new)
+                
+    def get_statistics(self):
+        """
+        Get a dictionary containing the statistics for your published works
+        
+        Returns:
+            dict: Dictionary containing field names and values
+        """
+        
+        url = self._statistics_url.format(self.username)
+        soup = self.request(url)
+        totals = soup.find("dl", {"class": "statistics meta group"})
+        if totals is None:
+            return {}
+        stats = {}
+        stats["user-subscriptions"] = int(totals.find("dd", {"class": "user subscriptions"}))
+        stats["kudos"] = int(totals.find("dd", {"class": "kudos"}))
+        stats["comment-threads"] = int(totals.find("dd", {"class": "comment thread count"}))
+        stats["bookmarks"] = int(totals.find("dd", {"class": "bookmarks"}))
+        stats["subscriptions"] = int(totals.find("dd", {"class": "subscriptions"}))
+        stats["word-count"] = int(total.find("dd", {"class": "words"}))
+        stats["hits"] = int(total.find("dd", {"class": "hits"}))
+        return stats
             
     @cached_property
     def bookmarks(self):
