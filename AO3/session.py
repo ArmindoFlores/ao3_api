@@ -501,8 +501,8 @@ class Session(GuestSession):
         stats["comment-threads"] = int(totals.find("dd", {"class": "comment thread count"}).getText())
         stats["bookmarks"] = int(totals.find("dd", {"class": "bookmarks"}).getText())
         stats["subscriptions"] = int(totals.find("dd", {"class": "subscriptions"}).getText())
-        stats["word-count"] = int(total.find("dd", {"class": "words"}).getText())
-        stats["hits"] = int(total.find("dd", {"class": "hits"}).getText())
+        stats["word-count"] = int(totals.find("dd", {"class": "words"}).getText())
+        stats["hits"] = int(totals.find("dd", {"class": "hits"}).getText())
         return stats
             
     @cached_property
