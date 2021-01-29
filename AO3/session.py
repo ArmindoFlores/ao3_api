@@ -496,13 +496,13 @@ class Session(GuestSession):
         if totals is None:
             return {}
         stats = {}
-        stats["user-subscriptions"] = int(totals.find("dd", {"class": "user subscriptions"}))
-        stats["kudos"] = int(totals.find("dd", {"class": "kudos"}))
-        stats["comment-threads"] = int(totals.find("dd", {"class": "comment thread count"}))
-        stats["bookmarks"] = int(totals.find("dd", {"class": "bookmarks"}))
-        stats["subscriptions"] = int(totals.find("dd", {"class": "subscriptions"}))
-        stats["word-count"] = int(total.find("dd", {"class": "words"}))
-        stats["hits"] = int(total.find("dd", {"class": "hits"}))
+        stats["user-subscriptions"] = int(totals.find("dd", {"class": "user subscriptions"}).getText())
+        stats["kudos"] = int(totals.find("dd", {"class": "kudos"}).getText())
+        stats["comment-threads"] = int(totals.find("dd", {"class": "comment thread count"}).getText())
+        stats["bookmarks"] = int(totals.find("dd", {"class": "bookmarks"}).getText())
+        stats["subscriptions"] = int(totals.find("dd", {"class": "subscriptions"}).getText())
+        stats["word-count"] = int(total.find("dd", {"class": "words"}).getText())
+        stats["hits"] = int(total.find("dd", {"class": "hits"}).getText())
         return stats
             
     @cached_property
