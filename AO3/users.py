@@ -341,7 +341,10 @@ class User:
             str: User's bio
         """
 
-        blockquote = self._soup_profile.find("blockquote", {'class': 'userstuff'})
+        div = self._soup_profile.find("div", {"class": "bio module"})
+        if div is None:
+            return ""
+        blockquote = div.find("blockquote", {"class": "userstuff"})
         return blockquote.getText() if blockquote is not None else ""    
     
     @cached_property
