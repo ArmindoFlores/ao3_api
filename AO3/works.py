@@ -230,6 +230,29 @@ class Work:
         """
         with open(filename, "wb") as file:
             file.write(self.download(filetype))
+            
+    @property
+    def metadata(self):
+        metadata = {
+            "authors": list(map(lambda author: author.username, self.authors)),
+            "bookmarks": self.bookmarks,
+            "categories": self.categories,
+            "characters": self.characters,
+            "date_published": str(self.date_published),
+            "date_updated": str(self.date_updated),
+            "fandoms": self.fandoms,
+            "hits": self.hits,
+            "kudos": self.kudos,
+            "language": self.language,
+            "rating": self.rating,
+            "relationships": self.relationships,
+            "series": list(map(lambda series: series.name, self.series)),
+            "summary": self.summary,
+            "tags": self.tags,
+            "title": self.title,
+            "warnings": self.warnings
+        }
+        return metadata
     
     def get_comments(self, chapter=None, maximum=None):
         """Returns a list of all threads of comments in the specified chapter. This operation can take a very long time.
