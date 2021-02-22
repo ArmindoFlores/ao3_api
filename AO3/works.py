@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import datetime
 from functools import cached_property
 
 from bs4 import BeautifulSoup
@@ -557,21 +557,21 @@ class Work:
         """
 
         dp = self._soup.find("dd", {'class': 'published'}).string
-        return date(*list(map(int, dp.split("-"))))
+        return datetime(*list(map(int, dp.split("-"))))
 
     @cached_property
     def date_updated(self):
         """Returns the date this work was last updated
 
         Returns:
-            datetime.date: update date
+            datetime.datetime: update date
         """
 
-        if self.chapters > 1:
-            du = self._soup.find("dd", {'class': 'status'}).string
-            return date(*list(map(int, du.split("-"))))
-        else:
-            return self.date_published
+        download = self._soup.find("li", {"class": "download"})
+        if download is not None and download.ul is not None:
+            timestamp = int(download.ul.a["href"].split("=")[-1])
+            return datetime.fromtimestamp(timestamp)
+        return datetime(self.date_published)
     
     @cached_property
     def tags(self):
