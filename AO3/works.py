@@ -87,7 +87,8 @@ class Work:
 
     def get_chapter_text(self, chapter):
         """Gets the chapter text from the specified chapter.
-        Work.load_chapters() must be called first.
+        If chapter=-1 then it gets the text from all chapters.
+        The work must be loaded first.
 
         Args:
             chapter (int): Work chapter
@@ -101,25 +102,24 @@ class Work:
         
         if not self.loaded:
             raise utils.UnloadedError("Work isn't loaded. Have you tried calling Work.reload()?")
-        if chapter > 0 and chapter <= self.chapters and self.chapters > 1:
-            if len(self.chapter_ids) == self.chapters:
-                chapter_html = self.request("https://archiveofourown.org/works/%i/chapters/%s?view_adult=true"%(self.workid, self.chapter_ids[chapter-1]))
-                div = chapter_html.find("div", {'role': 'article'})
-                text = ""
-                for p in div.findAll("p"):
-                    text += p.getText() + "\n"
-                return text
-            else:
-                raise utils.UnloadedError("Work.load_chapters() must be called first")
-
-        elif chapter == 1:
-            div = self._soup.find("div", {'role': 'article'})
-            text = ""
+        
+        text = ""
+        if chapter > 0 and chapter <= self.chapters and not self.oneshot:
+            chapter_html = self.request("https://archiveofourown.org/works/%i/chapters/%s?view_adult=true"%(self.workid, self.chapter_ids[chapter-1]))
+            div = chapter_html.find("div", {"role": "article"})
             for p in div.findAll("p"):
-                text += p.getText() + "\n"
-            return text
+                text += p.getText().replace("\n", "") + "\n"
+        elif self.oneshot:
+            div = self._soup.find("div", {"role": "article"})
+            for p in div.findAll("p"):
+                text += p.getText().replace("\n", "") + "\n"
         else:
-            raise utils.UnloadedError("Work.load_chapters() must be called first")
+            work_html = self.request("https://archiveofourown.org/works/%i/?view_adult=true&view_full_work=true"%(self.workid))
+            chapters_div = work_html.find("div", {"id": "chapters"})
+            for div in chapters_div.findAll("div", {"role": "article"}):
+                for p in div.findAll("p"):
+                    text += p.getText().replace("\n", "") + "\n"
+        return text
     
     def get_chapter_images(self, chapter):
         """Gets the chapter text from the specified chapter.
