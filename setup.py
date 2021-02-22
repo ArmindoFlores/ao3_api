@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="ao3-api",
-    version="2.0.6",
+    version="2.0.7",
     author="Francisco Rodrigues",
     author_email="francisco.rodrigues0908@gmail.com",
     description="An unofficial AO3 (archiveofourown.org) API",
