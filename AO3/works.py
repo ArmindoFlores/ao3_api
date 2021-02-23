@@ -237,9 +237,11 @@ class Work:
             "authors": list(map(lambda author: author.username, self.authors)),
             "bookmarks": self.bookmarks,
             "categories": self.categories,
+            "chapters": self.chapters,
             "characters": self.characters,
             "date_published": str(self.date_published),
             "date_updated": str(self.date_updated),
+            "expected_chapters": self.expected_chapters,
             "fandoms": self.fandoms,
             "hits": self.hits,
             "kudos": self.kudos,
@@ -247,6 +249,7 @@ class Work:
             "rating": self.rating,
             "relationships": self.relationships,
             "series": list(map(lambda series: series.name, self.series)),
+            "status": self.status,
             "summary": self.summary,
             "tags": self.tags,
             "title": self.title,
@@ -478,6 +481,31 @@ class Work:
         if chapters is not None:
             return int(self.str_format(chapters.string.split("/")[0]))
         return 0
+    
+    @cached_property
+    def expected_chapters(self):
+        """Returns the number of expected chapters for this work, or None if 
+        the author hasn't provided an expected number
+
+        Returns:
+            int: number of chapters
+        """
+        chapters = self._soup.find("dd", {'class': 'chapters'})
+        if chapters is not None:
+            n = self.str_format(chapters.string.split("/")[-1])
+            if n.isdigit():
+                return int(n)
+        return None
+    
+    @property
+    def status(self):
+        """Returns the status of this work
+
+        Returns:
+            str: work status
+        """
+
+        return "Completed" if self.chapters == self.expected_chapters else "Work in Progress"
 
     @cached_property
     def hits(self):
