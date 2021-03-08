@@ -394,3 +394,13 @@ class User:
         """
 
         return string.replace(",", "")
+
+    @cached_property
+    def workPages(self):
+        """
+        Returns how many pages of works a user has
+
+        Returns:
+            int: Amount of pages
+        """
+        return self._works_pages
