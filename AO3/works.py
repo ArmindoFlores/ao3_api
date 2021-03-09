@@ -635,7 +635,7 @@ class Work:
         if update is not None:
             split = update.string.split("-")
             return datetime(*list(map(int, split)))
-        return None
+        return self.date_published
     
     @cached_property
     def tags(self):
