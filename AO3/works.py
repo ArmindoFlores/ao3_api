@@ -611,11 +611,11 @@ class Work:
         return datetime(*list(map(int, dp.split("-"))))
 
     @cached_property
-    def date_updated(self):
-        """Returns the date this work was last updated
+    def date_edited(self):
+        """Returns the date this work was last edited
 
         Returns:
-            datetime.datetime: update date
+            datetime.datetime: edit date
         """
 
         download = self._soup.find("li", {"class": "download"})
@@ -623,6 +623,19 @@ class Work:
             timestamp = int(download.ul.a["href"].split("=")[-1])
             return datetime.fromtimestamp(timestamp)
         return datetime(self.date_published)
+
+    @cached_property
+    def date_updated(self):
+        """Returns the date this work was last updated
+
+        Returns:
+            datetime.datetime: update date
+        """
+        update = self._soup.find("dd", {"class": "status"})
+        if update is not None:
+            split = update.string.split("-")
+            return datetime(*list(map(int, split)))
+        return None
     
     @cached_property
     def tags(self):
