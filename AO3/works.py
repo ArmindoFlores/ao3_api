@@ -765,7 +765,19 @@ class Work:
             str: work URL
         """    
 
-        return "https://archiveofourown.org/works/%i"%self.workid    
+        return "https://archiveofourown.org/works/%i"%self.workid
+
+    @cached_property
+    def complete(self):
+        """
+        Return True if the work is complete
+
+        Retuns:
+            bool: True if a work is complete
+        """
+
+        chapterStatus = self._soup.find("dd", {"class": "chapters"}).string.split("/")
+        return chapterStatus[0] == chapterStatus[1]
     
     def get(self, *args, **kwargs):
         """Request a web page and return a Response object"""  
