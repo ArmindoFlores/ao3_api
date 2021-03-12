@@ -239,6 +239,7 @@ class Work:
             "categories": self.categories,
             "chapters": self.chapters,
             "characters": self.characters,
+            "complete": self.complete,
             "date_edited": str(self.date_edited),
             "date_published": str(self.date_published),
             "date_updated": str(self.date_updated),
