@@ -242,7 +242,7 @@ class Series:
     def work_list(self):
         ul = self._soup.find("ul", {"class": "series work index group"})
         works = []
-        for work in ul.find_all("li", {'class': 'work blurb group'}):
+        for work in ul.find_all("li", {"role": "article"}):
             authors = []
             if work.h4 is None:
                 continue
