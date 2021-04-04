@@ -85,7 +85,7 @@ class Search:
             return
 
         works = []
-        for work in results.find_all("li", {'class': 'work blurb group'}):
+        for work in results.find_all("li", {'role': 'article'}):
             if work.h4 is None:
                 continue
 
