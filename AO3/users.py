@@ -5,6 +5,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from . import threadable, utils
+from .common import get_work_from_banner
 from .requester import requester
 
 
@@ -200,7 +201,7 @@ class User:
     
     def get_works(self, use_threading=False):
         """
-        Get works authored by this user. Loads them if they haven't been previously
+        Get works authored by this user.
 
         Returns:
             list: List of works
@@ -237,21 +238,9 @@ class User:
         ol = self._soup_works.find("ol", {'class': 'work index group'})
 
         for work in ol.find_all("li", {'role': 'article'}):
-            authors = []
             if work.h4 is None:
                 continue
-            for a in work.h4.find_all("a"):
-                if 'rel' in a.attrs.keys():
-                    if "author" in a['rel']:
-                        authors.append(User(a.string, load=False))
-                elif a.attrs["href"].startswith("/works"):
-                    name = a.string
-                    id_ = utils.workid_from_url(a['href'])
-            new = Work(id_, load=False)
-            setattr(new, "title", name)
-            setattr(new, "authors", authors)
-            if new not in self._works:
-                self._works.append(new)
+            self._works.append(get_work_from_banner(work))
 
     @cached_property
     def bookmarks(self):
@@ -320,18 +309,7 @@ class User:
             authors = []
             if work.h4 is None:
                 continue
-            for a in work.h4.find_all("a"):
-                if 'rel' in a.attrs.keys():
-                    if "author" in a['rel']:
-                        authors.append(User(a.string, load=False))
-                elif a.attrs["href"].startswith("/works"):
-                    name = a.string
-                    id_ = utils.workid_from_url(a['href'])
-            new = Work(id_, load=False)
-            setattr(new, "title", name)
-            setattr(new, "authors", authors)
-            if new not in self._bookmarks:
-                self._bookmarks.append(new)
+            self._bookmarks.append(get_work_from_banner(work))
     
     @cached_property
     def bio(self):

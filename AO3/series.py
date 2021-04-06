@@ -4,6 +4,7 @@ from functools import cached_property
 from bs4 import BeautifulSoup
 
 from . import threadable, utils
+from .common import get_work_from_banner
 from .requester import requester
 from .users import User
 from .works import Work
@@ -243,20 +244,23 @@ class Series:
         ul = self._soup.find("ul", {"class": "series work index group"})
         works = []
         for work in ul.find_all("li", {"role": "article"}):
-            authors = []
             if work.h4 is None:
                 continue
-            for a in work.h4.find_all("a"):
-                if 'rel' in a.attrs.keys():
-                    if "author" in a['rel']:
-                        authors.append(User(a.string, load=False))
-                elif a.attrs["href"].startswith("/works"):
-                    workname = a.string
-                    workid = utils.workid_from_url(a['href'])
-            new = Work(workid, load=False)
-            setattr(new, "title", workname)
-            setattr(new, "authors", authors)
-            works.append(new)
+            works.append(get_work_from_banner(work))
+        #     authors = []
+        #     if work.h4 is None:
+        #         continue
+        #     for a in work.h4.find_all("a"):
+        #         if 'rel' in a.attrs.keys():
+        #             if "author" in a['rel']:
+        #                 authors.append(User(a.string, load=False))
+        #         elif a.attrs["href"].startswith("/works"):
+        #             workname = a.string
+        #             workid = utils.workid_from_url(a['href'])
+        #     new = Work(workid, load=False)
+        #     setattr(new, "title", workname)
+        #     setattr(new, "authors", authors)
+        #     works.append(new)
         return works
     
     def get(self, *args, **kwargs):

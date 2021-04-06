@@ -233,31 +233,55 @@ class Work:
             
     @property
     def metadata(self):
-        metadata = {
-            "authors": list(map(lambda author: author.username, self.authors)),
-            "bookmarks": self.bookmarks,
-            "categories": self.categories,
-            "chapters": self.chapters,
-            "characters": self.characters,
-            "complete": self.complete,
-            "date_edited": str(self.date_edited),
-            "date_published": str(self.date_published),
-            "date_updated": str(self.date_updated),
-            "expected_chapters": self.expected_chapters,
-            "fandoms": self.fandoms,
-            "hits": self.hits,
-            "kudos": self.kudos,
-            "language": self.language,
-            "rating": self.rating,
-            "relationships": self.relationships,
-            "restricted": self.restricted,
-            "series": list(map(lambda series: series.name, self.series)),
-            "status": self.status,
-            "summary": self.summary,
-            "tags": self.tags,
-            "title": self.title,
-            "warnings": self.warnings
-        }
+        metadata = {}
+        normal_fields = (
+            "bookmarks", 
+            "categories",
+            "chapters",
+            "characters",
+            "complete",
+            "expected_chapters",
+            "fandoms",
+            "hits",
+            "kudos",
+            "language",
+            "rating",
+            "relationships",
+            "restricted",
+            "status",
+            "summary",
+            "tags",
+            "title",
+            "warnings",
+            "workid",
+        )
+        string_fields = (
+            "date_edited",
+            "date_published",
+            "date_updated",
+        )
+        
+        for field in string_fields:
+            try:
+                metadata[field] = str(getattr(self, field))
+            except AttributeError:
+                pass
+            
+        for field in normal_fields:
+            try:
+                metadata[field] = getattr(self, field)
+            except AttributeError:
+                pass
+            
+        try:
+            metadata["authors"] = list(map(lambda author: author.username, self.authors))
+        except AttributeError:
+            pass
+        try:
+            metadata["series"] = list(map(lambda series: series.name, self.series))
+        except AttributeError:
+            pass
+
         return metadata
     
     def get_comments(self, chapter=None, maximum=None):
