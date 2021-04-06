@@ -54,6 +54,15 @@ class Series:
                 self.__dict__[attr] = BeautifulSoup(value, "lxml")
             else:
                 self.__dict__[attr] = value
+                
+    def set_session(self, session):
+        """Sets the session used to make requests for this series
+
+        Args:
+            session (AO3.Session/AO3.GuestSession): session object
+        """
+        
+        self._session = session 
         
     @threadable.threadable
     def reload(self):
