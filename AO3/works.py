@@ -250,6 +250,7 @@ class Work:
             "language": self.language,
             "rating": self.rating,
             "relationships": self.relationships,
+            "restricted": self.restricted,
             "series": list(map(lambda series: series.name, self.series)),
             "status": self.status,
             "summary": self.summary,
@@ -547,6 +548,15 @@ class Work:
         if comments is not None:
             return int(self.str_format(comments.string))
         return 0
+    
+    @cached_property
+    def restricted(self):
+        """Whether this is a restricted work or not
+        
+        Returns:
+            int: True if work is restricted
+        """
+        return self._soup.find("img", {'title': 'Restricted'}) is not None
 
     @cached_property
     def words(self):
