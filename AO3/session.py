@@ -510,3 +510,35 @@ class Session(GuestSession):
         """
 
         return string.replace(",", "")
+
+    def get_marked_for_later(self, sleep=1, timeout_sleep=60):
+        """
+        Gets every marked for later work
+
+        Arguments:
+            sleep (int): The time to wait between page requests
+            timeout_sleep (int): The time to wait after the rate limit is hit
+
+        Returns:
+            works (list): All marked for later works
+        """
+        pageRaw = self.request(f"https://archiveofourown.org/users/{self.username}/readings?page=1&show=to-read").find("ol", {"class": "pagination actions"}).find_all("li")
+        maxPage = int(pageRaw[len(pageRaw)-2].text)
+        works = []
+        for page in range(maxPage):
+            grabbed = False
+            while grabbed == False:
+                try:
+                    workPage = self.request(f"https://archiveofourown.org/users/{self.username}/readings?page={page+1}&show=to-read")
+                    worksRaw = workPage.find_all("li", {"role": "article"})
+                    for work in worksRaw:
+                        try:
+                            workId = int(work.h4.a.get("href").split("/")[2])
+                            works.append(Work(workId, load=False))
+                        except AttributeError:
+                            pass
+                    grabbed = True
+                except utils.HTTPError:
+                    time.sleep(timeout_sleep)
+            time.sleep(sleep)
+        return works
