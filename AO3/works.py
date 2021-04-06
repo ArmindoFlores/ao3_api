@@ -28,7 +28,7 @@ class Work:
         self._session = session
         self.chapter_ids = []
         self.chapter_names = []
-        self.workid = workid
+        self.id = workid
         self._soup = None
         if load:
             self.reload()
@@ -37,10 +37,10 @@ class Work:
         try:
             return f"<Work [{self.title}]>"
         except:
-            return f"<Work [{self.workid}]>"
+            return f"<Work [{self.id}]>"
     
     def __eq__(self, other):
-        return isinstance(other, Work) and other.workid == self.workid
+        return isinstance(other, Work) and other.id == self.id
     
     def __getstate__(self):
         d = {}
@@ -71,7 +71,7 @@ class Work:
                 if attr in self.__dict__:
                     delattr(self, attr)
         
-        self._soup = self.request("https://archiveofourown.org/works/%i?view_adult=true"%self.workid)
+        self._soup = self.request("https://archiveofourown.org/works/%i?view_adult=true"%self.id)
         if "Error 404" in self._soup.text:
             raise utils.InvalidIdError("Cannot find work")
         self.load_chapters()
@@ -105,7 +105,7 @@ class Work:
         
         text = ""
         if chapter > 0 and chapter <= self.chapters and not self.oneshot:
-            chapter_html = self.request("https://archiveofourown.org/works/%i/chapters/%s?view_adult=true"%(self.workid, self.chapter_ids[chapter-1]))
+            chapter_html = self.request("https://archiveofourown.org/works/%i/chapters/%s?view_adult=true"%(self.id, self.chapter_ids[chapter-1]))
             div = chapter_html.find("div", {"role": "article"})
             for p in div.findAll("p"):
                 text += p.getText().replace("\n", "") + "\n"
@@ -114,7 +114,7 @@ class Work:
             for p in div.findAll("p"):
                 text += p.getText().replace("\n", "") + "\n"
         else:
-            work_html = self.request("https://archiveofourown.org/works/%i/?view_adult=true&view_full_work=true"%(self.workid))
+            work_html = self.request("https://archiveofourown.org/works/%i/?view_adult=true&view_full_work=true"%(self.id))
             chapters_div = work_html.find("div", {"id": "chapters"})
             for div in chapters_div.findAll("div", {"role": "article"}):
                 for p in div.findAll("p"):
@@ -139,7 +139,7 @@ class Work:
             raise utils.UnloadedError("Work isn't loaded. Have you tried calling Work.reload()?")
         if chapter > 0 and chapter <= self.chapters and self.chapters > 1:
             if len(self.chapter_ids) == self.chapters:
-                chapter_html = self.request("https://archiveofourown.org/works/%i/chapters/%s?view_adult=true"%(self.workid, self.chapter_ids[chapter-1]))
+                chapter_html = self.request("https://archiveofourown.org/works/%i/chapters/%s?view_adult=true"%(self.id, self.chapter_ids[chapter-1]))
                 div = chapter_html.find("div", {"role": "article"})
                 images = []
                 line = 0
@@ -174,7 +174,7 @@ class Work:
         if not self.loaded:
             raise utils.UnloadedError("Work isn't loaded. Have you tried calling Work.reload()?")
         if not self.oneshot:
-            navigate = self.request("https://archiveofourown.org/works/%i/navigate?view_adult=true"%self.workid)
+            navigate = self.request("https://archiveofourown.org/works/%i/navigate?view_adult=true"%self.id)
             all_chapters = navigate.find("ol", {"class": "chapter index group"})
             if all_chapters is None:
                 raise utils.AuthError("This work is only available to registered users of the Archive")
@@ -305,7 +305,7 @@ class Work:
         if not self.loaded:
             raise utils.UnloadedError("Work isn't loaded. Have you tried calling Work.reload()?")
         if self.oneshot:
-            chapter_id = self.workid
+            chapter_id = self.id
         else:
             if chapter is None:
                 raise IndexError("chapter cannot be 'None'")
@@ -354,7 +354,7 @@ class Work:
         if self._session is None or not self._session.is_authed:
             raise utils.AuthError("You can only subscribe to a work using an authenticated session")
         
-        utils.subscribe(self.workid, "Work", self._session)
+        utils.subscribe(self, "Work", self._session)
         
     @threadable.threadable
     def unsubscribe(self):
@@ -370,7 +370,17 @@ class Work:
         if self._session is None or not self._session.is_authed:
             raise utils.AuthError("You can only unsubscribe from a work using an authenticated session")
         
-        utils.subscribe(self.workid, "Work", self._session, True, self._sub_id)
+        utils.subscribe(self, "Work", self._session, True, self._sub_id)
+        
+    @cached_property
+    def authenticity_token(self):
+        """Token used to take actions that involve this work"""
+        
+        if not self.loaded:
+            return None
+        
+        token = self._soup.find("meta", {"name": "csrf-token"})
+        return token["content"]
         
     @cached_property
     def is_subscribed(self):
@@ -401,7 +411,7 @@ class Work:
 
         Raises:
             utils.UnexpectedResponseError: Unexpected response received
-            utils.InvalidIdError: Invalid workid (work doesn't exist)
+            utils.InvalidIdError: Invalid ID (work doesn't exist)
             utils.AuthError: Invalid session or authenticity token
 
         Returns:
@@ -410,7 +420,7 @@ class Work:
         
         if self._session is None:
             raise utils.AuthError("Invalid session")
-        return utils.kudos(self.workid, self._session)
+        return utils.kudos(self, self._session)
     
     @threadable.threadable
     def comment(self, chapter, comment_text, email="", name=""):
@@ -443,11 +453,11 @@ class Work:
             raise utils.UnloadedError("Work.load_chapters() must be called first")
         
         if self.chapters == 1:
-            chapterid = self.workid
+            chapterid = self.id
         else:
             chapterid = self.chapter_ids[chapter-1]
             
-        return utils.comment(chapterid, comment_text, self._session, self.oneshot, email=email, name=name)
+        return utils.comment(self, comment_text, self._session, True, email=email, name=name)
     
     @property
     def loaded(self):
@@ -801,7 +811,7 @@ class Work:
             str: work URL
         """    
 
-        return "https://archiveofourown.org/works/%i"%self.workid
+        return "https://archiveofourown.org/works/%i"%self.id
 
     @cached_property
     def complete(self):

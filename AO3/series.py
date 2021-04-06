@@ -23,20 +23,20 @@ class Series:
             utils.InvalidIdError: Invalid series ID
         """
         
-        self.seriesid = seriesid
+        self.id = seriesid
         self._session = session
         self._soup = None
         if load:
             self.reload()
             
     def __eq__(self, other):
-        return isinstance(other, Series) and other.seriesid == self.seriesid
+        return isinstance(other, Series) and other.id == self.id
     
     def __repr__(self):
         try:
             return f"<Series [{self.name}]>" 
         except:
-            return f"<Series [{self.seriesid}]>"
+            return f"<Series [{self.id}]>"
         
     def __getstate__(self):
         d = {}
@@ -67,7 +67,7 @@ class Series:
                 if attr in self.__dict__:
                     delattr(self, attr)
                     
-        self._soup = self.request(f"https://archiveofourown.org/series/{self.seriesid}")
+        self._soup = self.request(f"https://archiveofourown.org/series/{self.id}")
         if "Error 404" in self._soup.text:
             raise utils.InvalidIdError("Cannot find series")
         
@@ -83,7 +83,7 @@ class Series:
         if self._session is None or not self._session.is_authed:
             raise utils.AuthError("You can only subscribe to a series using an authenticated session")
         
-        utils.subscribe(self.seriesid, "Series", self._session)
+        utils.subscribe(self, "Series", self._session)
         
     @threadable.threadable
     def unsubscribe(self):
@@ -99,7 +99,22 @@ class Series:
         if self._session is None or not self._session.is_authed:
             raise utils.AuthError("You can only unsubscribe from a series using an authenticated session")
         
-        utils.subscribe(self.seriesid, "Series", self._session, True, self._sub_id)
+        utils.subscribe(self, "Series", self._session, True, self._sub_id)
+        
+    @property
+    def loaded(self):
+        """Returns True if this series has been loaded"""
+        return self._soup is not None
+        
+    @cached_property
+    def authenticity_token(self):
+        """Token used to take actions that involve this work"""
+        
+        if not self.loaded:
+            return None
+        
+        token = self._soup.find("meta", {"name": "csrf-token"})
+        return token["content"]
         
     @cached_property
     def is_subscribed(self):

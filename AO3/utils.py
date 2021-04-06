@@ -200,20 +200,20 @@ def workid_from_url(url):
             return int(split_url[index+1])
     return
 
-def comment(chapterid, comment_text, sess, oneshot=False, commentid=None, email="", name=""):
+def comment(commentable, comment_text, sess, fullwork=False, commentid=None, email="", name=""):
     """Leaves a comment on a specific work
 
     Args:
-        chapterid (int): Chapter id
+        commentable (Work/Chapter): Chapter/Work object
         comment_text (str): Comment text (must have between 1 and 10000 characters)
-        oneshot (bool): Should be True if the work has only one chapter. In this case, chapterid becomes workid
+        fullwork (bool): Should be True if the work has only one chapter or if the comment is to be posted on the full work.
         sess (AO3.Session/AO3.GuestSession): Session object to request with.
         commentid (str/int): If specified, the comment is posted as a reply to this comment. Defaults to None.
         email (str): Email to post with. Only used if sess is None. Defaults to "".
         name (str): Name that will appear on the comment. Only used if sess is None. Defaults to "".
 
     Raises:
-        utils.InvalidIdError: Invalid workid
+        utils.InvalidIdError: Invalid ID
         utils.UnexpectedResponseError: Unknown error
         utils.PseudoError: Couldn't find a valid pseudonym to post under
         utils.DuplicateCommentError: The comment you're trying to post was already posted
@@ -226,22 +226,22 @@ def comment(chapterid, comment_text, sess, oneshot=False, commentid=None, email=
     headers = {
         "x-requested-with": "XMLHttpRequest",
         "x-newrelic-id": "VQcCWV9RGwIJVFFRAw==",
-        "x-csrf-token": sess.authenticity_token
+        "x-csrf-token": commentable.authenticity_token
     }
     
     data = {}
-    if oneshot:
-        data["work_id"] = str(chapterid)
+    if fullwork:
+        data["work_id"] = str(commentable.id)
     else:
-        data["chapter_id"] = str(chapterid)
+        data["chapter_id"] = str(commentable.id)
     if commentid is not None:
         data["comment_id"] = commentid
         
     if sess.is_authed:
-        if oneshot:
-            referer = f"https://archiveofourown.org/works/{chapterid}"
+        if fullwork:
+            referer = f"https://archiveofourown.org/works/{commentable.id}"
         else:
-            referer = f"https://archiveofourown.org/chapters/{chapterid}"
+            referer = f"https://archiveofourown.org/chapters/{commentable.id}"
             
         soup = sess.request(referer)   
         pseud = soup.find("input", {"name": "comment[pseud_id]"})
@@ -271,7 +271,7 @@ def comment(chapterid, comment_text, sess, oneshot=False, commentid=None, email=
             raise ValueError("You need to specify both an email and a name!")
         
         data.update({
-            "authenticity_token": sess.authenticity_token,
+            "authenticity_token": commentable.authenticity_token,
             "comment[email]": email,
             "comment[name]": name,
             "comment[comment_content]": comment_text,
@@ -284,7 +284,7 @@ def comment(chapterid, comment_text, sess, oneshot=False, commentid=None, email=
         if len(response.content) > 0:
             return response
         else:
-            raise InvalidIdError(f"Invalid {'workid' if oneshot else 'chapterid'}")
+            raise InvalidIdError(f"Invalid {'work ID' if fullwork else 'chapter ID'}")
     
     if response.status_code == 422:
         json = response.json()
@@ -333,15 +333,15 @@ def delete_comment(commentid, session):
                 raise PermissionError("You don't have permission to do this")
     raise UnexpectedResponseError("An unexpected error has occurred")
             
-def kudos(workid, session):
+def kudos(work, session):
     """Leave a 'kudos' in a specific work
 
     Args:
-        workid (int/str): ID of the work
+        work (Work): Work object
 
     Raises:
         utils.UnexpectedResponseError: Unexpected response received
-        utils.InvalidIdError: Invalid workid (work doesn't exist)
+        utils.InvalidIdError: Invalid ID (work doesn't exist)
         utils.AuthError: Invalid authenticity token
 
     Returns:
@@ -349,14 +349,14 @@ def kudos(workid, session):
     """
     
     data = {
-        "authenticity_token": session.authenticity_token,
-        "kudo[commentable_id]": workid,
+        "authenticity_token": work.authenticity_token,
+        "kudo[commentable_id]": work.id,
         "kudo[commentable_type]": "Work"
     }
     headers = {
-        "x-csrf-token": session.authenticity_token,
+        "x-csrf-token": work.authenticity_token,
         "x-requested-with": "XMLHttpRequest",
-        "referer": "https://archiveofourown.org/work/{workid}"
+        "referer": f"https://archiveofourown.org/work/{work.id}"
     }
     response = session.post("https://archiveofourown.org/kudos.js", headers=headers, data=data)
     if response.status_code == 429:
@@ -372,16 +372,16 @@ def kudos(workid, session):
             elif "user_id" in json["errors"] or "ip_address" in json["errors"]:
                 return False  # User has already left kudos
             elif "no_commentable" in json["errors"]:
-                raise InvalidIdError("Invalid workid")
+                raise InvalidIdError("Invalid ID")
         raise UnexpectedResponseError(f"Unexpected json received:\n"+str(json))
     else:
         raise UnexpectedResponseError(f"Unexpected HTTP status code received ({response.status_code})")
     
-def subscribe(workid, worktype, session, unsubscribe=False, subid=None):
+def subscribe(subscribable, worktype, session, unsubscribe=False, subid=None):
     """Subscribes to a work. Be careful, you can subscribe to a work multiple times
 
     Args:
-        workid (int/str): ID of the work
+        subscribable (Work/Series/User): AO3 object
         worktype (str): Type of the work (Series/Work/User)
         session (AO3.Session): Session object
         unsubscribe (bool, optional): Unsubscribe instead of subscribing. Defaults to False.
@@ -390,7 +390,7 @@ def subscribe(workid, worktype, session, unsubscribe=False, subid=None):
     Raises:
         AuthError: Invalid auth token
         AuthError: Invalid session
-        InvalidIdError: Invalid workid / worktype
+        InvalidIdError: Invalid ID / worktype
         InvalidIdError: Invalid subid
     """
     
@@ -398,8 +398,8 @@ def subscribe(workid, worktype, session, unsubscribe=False, subid=None):
         raise AuthError("Invalid session")
     
     data = {
-        "authenticity_token": session.authenticity_token,
-        "subscription[subscribable_id]": workid,
+        "authenticity_token": subscribable.authenticity_token,
+        "subscription[subscribable_id]": subscribable.id,
         "subscription[subscribable_type]": worktype.capitalize()
     }
 
@@ -416,4 +416,4 @@ def subscribe(workid, worktype, session, unsubscribe=False, subid=None):
         if req.headers["Location"] == "https://archiveofourown.org/auth_error":
             raise AuthError("Invalid authentication token. Try calling session.refresh_auth_token()")
     else:
-        raise InvalidIdError(f"Invalid workid / worktype")
+        raise InvalidIdError(f"Invalid ID / worktype")

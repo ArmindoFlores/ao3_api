@@ -80,14 +80,20 @@ class User:
         @threadable.threadable
         def req_works(username):
             self._soup_works = self.request(f"https://archiveofourown.org/users/{username}/works")
+            token = self._soup_works.find("meta", {"name": "csrf-token"})
+            setattr(self, "authenticity_token", token["content"])
            
         @threadable.threadable
         def req_profile(username): 
             self._soup_profile = self.request(f"https://archiveofourown.org/users/{username}/profile")
+            token = self._soup_profile.find("meta", {"name": "csrf-token"})
+            setattr(self, "authenticity_token", token["content"])
 
         @threadable.threadable
         def req_bookmarks(username): 
             self._soup_bookmarks = self.request(f"https://archiveofourown.org/users/{username}/bookmarks")
+            token = self._soup_bookmarks.find("meta", {"name": "csrf-token"})
+            setattr(self, "authenticity_token", token["content"])
             
         rs = [req_works(self.username, threaded=True),
               req_profile(self.username, threaded=True),
@@ -123,7 +129,7 @@ class User:
         if self._session is None or not self._session.is_authed:
             raise utils.AuthError("You can only subscribe to a user using an authenticated session")
         
-        utils.subscribe(self.user_id, "User", self._session)
+        utils.subscribe(self, "User", self._session)
         
     @threadable.threadable
     def unsubscribe(self):
@@ -139,7 +145,12 @@ class User:
         if self._session is None or not self._session.is_authed:
             raise utils.AuthError("You can only unsubscribe from a user using an authenticated session")
         
-        utils.subscribe(self.user_id, "User", self._session, True, self._sub_id)
+        utils.subscribe(self, "User", self._session, True, self._sub_id)
+        
+    @property
+    def id(self):
+        id_ = self._soup_profile.find("input", {"id": "subscription_subscribable_id"})
+        return int(id_["value"]) if id_ is not None else None
         
     @cached_property
     def is_subscribed(self):
@@ -151,6 +162,21 @@ class User:
         header = self._soup_profile.find("div", {"class": "primary header module"})
         input_ = header.find("input", {"name": "commit", "value": "Unsubscribe"})
         return input_ is not None
+    
+    @property
+    def loaded(self):
+        """Returns True if this user has been loaded"""
+        return self._soup_profile is not None
+    
+    # @cached_property
+    # def authenticity_token(self):
+    #     """Token used to take actions that involve this user"""
+        
+    #     if not self.loaded:
+    #         return None
+        
+    #     token = self._soup_profile.find("meta", {"name": "csrf-token"})
+    #     return token["content"]
     
     @cached_property
     def user_id(self):

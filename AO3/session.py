@@ -25,18 +25,18 @@ class GuestSession:
         self.session = requests.Session()
     
     @threadable.threadable
-    def comment(self, chapterid, comment_text, oneshot=False, commentid=None):
+    def comment(self, commentable, comment_text, oneshot=False, commentid=None):
         """Leaves a comment on a specific work.
         This function is threadable.
 
         Args:
-            chapterid (str/int): Chapter id
+            commentable (Work/Chapter): Commentable object
             comment_text (str): Comment text (must have between 1 and 10000 characters)
             oneshot (bool): Should be True if the work has only one chapter. In this case, chapterid becomes workid
             commentid (str/int): If specified, the comment is posted as a reply to this one. Defaults to None.
 
         Raises:
-            utils.InvalidIdError: Invalid workid
+            utils.InvalidIdError: Invalid ID
             utils.UnexpectedResponseError: Unknown error
             utils.PseudoError: Couldn't find a valid pseudonym to post under
             utils.DuplicateCommentError: The comment you're trying to post was already posted
@@ -46,27 +46,27 @@ class GuestSession:
             requests.models.Response: Response object
         """
         
-        response = utils.comment(chapterid, comment_text, self, oneshot, commentid)
+        response = utils.comment(commentable, comment_text, self, oneshot, commentid)
         return response
 
     
     @threadable.threadable
-    def kudos(self, workid):
+    def kudos(self, work):
         """Leave a 'kudos' in a specific work.
         This function is threadable.
 
         Args:
-            workid (int/str): ID of the work
+            work (Work): ID of the work
 
         Raises:
             utils.UnexpectedResponseError: Unexpected response received
-            utils.InvalidIdError: Invalid workid (work doesn't exist)
+            utils.InvalidIdError: Invalid ID (work doesn't exist)
 
         Returns:
             bool: True if successful, False if you already left kudos there
         """
         
-        return utils.kudos(workid, self)
+        return utils.kudos(work, self)
         
     @threadable.threadable
     def refresh_auth_token(self):

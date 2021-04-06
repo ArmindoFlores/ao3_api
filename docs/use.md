@@ -228,7 +228,7 @@ start = time()
 comments = work.get_comments(1, 5)
 print(f"Loaded {len(comments)} comment threads in {round(time()-start, 1)} seconds\n")
 for comment in comments:
-    print(f"Comment ID: {comment.comment_id}\nReplies: {len(comment.get_thread())}")
+    print(f"Comment ID: {comment.id}\nReplies: {len(comment.get_thread())}")
 ```
 
 ```

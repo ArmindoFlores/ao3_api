@@ -19,7 +19,7 @@ class Comment:
             oneshot (bool, optional): Should be True if the work only has one chapter. Defaults to False.
         """
         
-        self.comment_id = comment_id
+        self.id = comment_id
         self.chapter_id = chapter_id
         self.reply_id = None
         self.oneshot = oneshot
@@ -38,12 +38,12 @@ class Comment:
         if "author" in self._cache and not refresh:
             return self._cache["author"]
         else:
-            req = requests.get(f"https://archiveofourown.org/comments/{self.comment_id}")
+            req = requests.get(f"https://archiveofourown.org/comments/{self.id}")
             if req.status_code == 429:
                 raise utils.HTTPError("We are being rate-limited. Try again in a while or reduce the number of requests")
             soup = BeautifulSoup(req.content, features="lxml")
             thread = soup.find("ol", {"class": "thread"})
-            first = thread.find("li", {"id": f"comment_{self.comment_id}"})
+            first = thread.find("li", {"id": f"comment_{self.id}"})
             self._cache["author"] = User(first.a.getText(), load=False)
             return self._cache["author"]
         
@@ -60,12 +60,12 @@ class Comment:
         if "comment_text" in self._cache and not refresh:
             return self._cache["comment_text"]
         else:
-            req = requests.get(f"https://archiveofourown.org/comments/{self.comment_id}")
+            req = requests.get(f"https://archiveofourown.org/comments/{self.id}")
             if req.status_code == 429:
                 raise utils.HTTPError("We are being rate-limited. Try again in a while or reduce the number of requests")
             soup = BeautifulSoup(req.content, features="lxml")
             thread = soup.find("ol", {"class": "thread"})
-            first = thread.find("li", {"id": f"comment_{self.comment_id}"})
+            first = thread.find("li", {"id": f"comment_{self.id}"})
             if first.blockquote is not None:
                 text = first.blockquote.getText()
             else:
@@ -89,7 +89,7 @@ class Comment:
                 c = Comment(id_, self.chapter_id)
                 c._cache["thread"] = []
                 if parent is not None:
-                    c.reply_id = parent.comment_id
+                    c.reply_id = parent.id
                     if comment.blockquote is not None:
                         c._cache["comment_text"] = comment.blockquote.getText()
                     else:
@@ -97,7 +97,7 @@ class Comment:
                     c._cache["author"] = User(comment.a.getText(), load=False)
                     l.append(c)
                 else:
-                    c.reply_id = self.comment_id
+                    c.reply_id = self.id
                     if comment.blockquote is not None:
                         l[0]._cache["comment_text"] = comment.blockquote.getText()
                     else:
@@ -143,7 +143,7 @@ class Comment:
         if "thread" in self._cache and not refresh:
             return self._cache["thread"]
         else:
-            req = requests.get(f"https://archiveofourown.org/comments/{self.comment_id}")
+            req = requests.get(f"https://archiveofourown.org/comments/{self.id}")
             if req.status_code == 429:
                 raise utils.HTTPError("We are being rate-limited. Try again in a while or reduce the number of requests")
             if req.status_code == 404:
@@ -152,7 +152,7 @@ class Comment:
             thread = soup.find("ol", {"class": "thread"})
             if thread is None:
                 self._cache["thread"] = []
-            first = thread.find("li", {"id": f"comment_{self.comment_id}"})
+            first = thread.find("li", {"id": f"comment_{self.id}"})
             if first.blockquote is not None:
                 text = first.blockquote.getText()
             else:
@@ -177,7 +177,7 @@ class Comment:
             name (str, optional): Name. Defaults to "".
 
         Raises:
-            utils.InvalidIdError: Invalid workid
+            utils.InvalidIdError: Invalid ID
             utils.UnexpectedResponseError: Unknown error
             utils.PseudoError: Couldn't find a valid pseudonym to post under
             utils.DuplicateCommentError: The comment you're trying to post was already posted
@@ -190,7 +190,7 @@ class Comment:
         
         if self.chapter_id is None:
             raise ValueError("self.chapter_id cannot be 'None'")
-        return utils.comment(self.chapter_id, comment_text, session, self.oneshot, self.comment_id, email, name)
+        return utils.comment(self, comment_text, session, self.oneshot, self.id, email, name)
     
     @threadable.threadable
     def load(self, refresh=False):
@@ -216,7 +216,7 @@ class Comment:
             utils.UnexpectedResponseError: Unknown error
         """
         
-        utils.delete_comment(self.comment_id, session)
+        utils.delete_comment(self.id, session)
     
 def threadIterator(comment):
     if "thread" not in comment._cache or len(comment._cache["thread"]) == 0:
