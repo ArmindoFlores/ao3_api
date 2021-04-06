@@ -23,6 +23,10 @@ class GuestSession:
         self.authenticity_token = None
         self.username = ""
         self.session = requests.Session()
+        
+    @property
+    def user(self):
+        return User(self.username, self, False)
     
     @threadable.threadable
     def comment(self, commentable, comment_text, oneshot=False, commentid=None):
