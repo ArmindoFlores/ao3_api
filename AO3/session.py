@@ -15,7 +15,7 @@ from .works import Work
 
 class GuestSession:
     """
-    AP3 guest session object
+    AO3 guest session object
     """
 
     def __init__(self):
