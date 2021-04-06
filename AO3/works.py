@@ -6,6 +6,7 @@ from bs4 import BeautifulSoup
 from . import threadable, utils
 from .comments import Comment
 from .requester import requester
+from .users import User
 
 
 class Work:
@@ -284,13 +285,12 @@ class Work:
 
         return metadata
     
-    def get_comments(self, chapter=None, maximum=None):
-        """Returns a list of all threads of comments in the specified chapter. This operation can take a very long time.
+    def get_comments(self, maximum=None):
+        """Returns a list of all threads of comments in the work. This operation can take a very long time.
         Because of that, it is recomended that you set a maximum number of comments. 
         Duration: ~ (0.13 * n_comments) seconds or 2.9 seconds per comment page
 
         Args:
-            chapter (int/str, optional): Chapter number, only required if work is not a oneshot. Defaults to None.
             maximum (int, optional): Maximum number of comments to be returned. None -> No maximum
 
         Raises:
@@ -304,20 +304,8 @@ class Work:
         
         if not self.loaded:
             raise utils.UnloadedError("Work isn't loaded. Have you tried calling Work.reload()?")
-        if self.oneshot:
-            chapter_id = self.id
-        else:
-            if chapter is None:
-                raise IndexError("chapter cannot be 'None'")
-            if chapter <= 0 or chapter >= self.chapters:
-                raise IndexError("Invalid chapter number")
-            if len(self.chapter_ids) != self.chapters:
-                raise utils.UnloadedError("Work.load_chapters() must be called first")
             
-            chapter_id = self.chapter_ids[chapter-1]
-            
-        string = "works" if self.oneshot else "chapters" 
-        url = f"https://archiveofourown.org/{string}/{chapter_id}?page=%d&show_comments=true&view_adult=true"
+        url = f"https://archiveofourown.org/works/{self.id}?page=%d&show_comments=true&view_adult=true&view_full_work=true"
         soup = self.request(url%1)
         
         pages = 0
@@ -339,7 +327,25 @@ class Work:
                 if maximum is not None and len(comments) >= maximum:
                     return comments
                 id_ = int(li.attrs["id"][8:])
-                comments.append(Comment(id_, chapter_id, oneshot=self.oneshot))
+                
+                header = li.find("h4", {"class": ("heading", "byline")})
+                if header is None:
+                    author = None
+                else:
+                    author = User(str(header.a.text), self._session, False)
+                    
+                if li.blockquote is not None:
+                    text = li.blockquote.getText()
+                else:
+                    text = ""                  
+                
+                comment = Comment(id_, self, session=self._session, load=False)      
+                print(comment.parent)       
+                setattr(comment, "authenticity_token", self.authenticity_token)
+                setattr(comment, "author", author)
+                setattr(comment, "text", text)
+                comment._thread = None
+                comments.append(comment)
         return comments
     
     @threadable.threadable
