@@ -251,12 +251,12 @@ class Series:
         #     if work.h4 is None:
         #         continue
         #     for a in work.h4.find_all("a"):
-        #         if 'rel' in a.attrs.keys():
-        #             if "author" in a['rel']:
+        #         if "rel" in a.attrs.keys():
+        #             if "author" in a["rel"]:
         #                 authors.append(User(a.string, load=False))
         #         elif a.attrs["href"].startswith("/works"):
         #             workname = a.string
-        #             workid = utils.workid_from_url(a['href'])
+        #             workid = utils.workid_from_url(a["href"])
         #     new = Work(workid, load=False)
         #     setattr(new, "title", workname)
         #     setattr(new, "authors", authors)

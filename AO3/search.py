@@ -80,7 +80,7 @@ class Search:
             self.bookmarks, self.comments, self.completion_status, self.page,
             self.sort_column, self.sort_direction, self.session)
 
-        results = soup.find("ol", {'class': ("work", "index", "group")})
+        results = soup.find("ol", {"class": ("work", "index", "group")})
         if results is None and soup.find("p", text="No results found. You may want to edit your search to make it less specific.") is not None:
             self.results = []
             self.total_results = 0
@@ -88,7 +88,7 @@ class Search:
             return
 
         works = []
-        for work in results.find_all("li", {'role': 'article'}):
+        for work in results.find_all("li", {"role": "article"}):
             if work.h4 is None:
                 continue
             

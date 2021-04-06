@@ -182,8 +182,8 @@ class User:
             int: Number of works
         """
 
-        div = self._soup_works.find("div", {'id': 'inner'})
-        span = div.find("span", {'class': 'current'}).getText().replace("(", "").replace(")", "")
+        div = self._soup_works.find("div", {"id": "inner"})
+        span = div.find("span", {"class": "current"}).getText().replace("(", "").replace(")", "")
         n = span.split(" ")[1]
         return int(self.str_format(n))   
 
@@ -235,9 +235,9 @@ class User:
         from .works import Work
         self._soup_works = self.request(f"https://archiveofourown.org/users/{self.username}/works?page={page}")
             
-        ol = self._soup_works.find("ol", {'class': 'work index group'})
+        ol = self._soup_works.find("ol", {"class": "work index group"})
 
-        for work in ol.find_all("li", {'role': 'article'}):
+        for work in ol.find_all("li", {"role": "article"}):
             if work.h4 is None:
                 continue
             self._works.append(get_work_from_banner(work))
@@ -250,8 +250,8 @@ class User:
             int: Number of bookmarks 
         """
 
-        div = self._soup_bookmarks.find("div", {'id': 'inner'})
-        span = div.find("span", {'class': 'current'}).getText().replace("(", "").replace(")", "")
+        div = self._soup_bookmarks.find("div", {"id": "inner"})
+        span = div.find("span", {"class": "current"}).getText().replace("(", "").replace(")", "")
         n = span.split(" ")[1]
         return int(self.str_format(n))   
 
@@ -303,9 +303,9 @@ class User:
         from .works import Work
         self._soup_bookmarks = self.request(f"https://archiveofourown.org/users/{self.username}/bookmarks?page={page}")
             
-        ol = self._soup_bookmarks.find("ol", {'class': 'bookmark index group'})
+        ol = self._soup_bookmarks.find("ol", {"class": "bookmark index group"})
 
-        for work in ol.find_all("li", {'role': 'article'}):
+        for work in ol.find_all("li", {"role": "article"}):
             authors = []
             if work.h4 is None:
                 continue

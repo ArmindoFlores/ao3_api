@@ -140,7 +140,7 @@ class Work:
         if chapter > 0 and chapter <= self.chapters and self.chapters > 1:
             if len(self.chapter_ids) == self.chapters:
                 chapter_html = self.request("https://archiveofourown.org/works/%i/chapters/%s?view_adult=true"%(self.workid, self.chapter_ids[chapter-1]))
-                div = chapter_html.find("div", {'role': 'article'})
+                div = chapter_html.find("div", {"role": "article"})
                 images = []
                 line = 0
                 for p in div.findAll("p"):
@@ -152,7 +152,7 @@ class Work:
                 raise utils.UnloadedError("Work.load_chapters() must be called first")
 
         elif chapter == 1:
-            div = self._soup.find("div", {'role': 'article'})
+            div = self._soup.find("div", {"role": "article"})
             images = []
             line = 0
             for p in div.findAll("p"):
@@ -175,13 +175,13 @@ class Work:
             raise utils.UnloadedError("Work isn't loaded. Have you tried calling Work.reload()?")
         if not self.oneshot:
             navigate = self.request("https://archiveofourown.org/works/%i/navigate?view_adult=true"%self.workid)
-            all_chapters = navigate.find("ol", {'class': 'chapter index group'})
+            all_chapters = navigate.find("ol", {"class": "chapter index group"})
             if all_chapters is None:
                 raise utils.AuthError("This work is only available to registered users of the Archive")
             self.chapter_ids = []
             self.chapter_names = []
             for chapter in all_chapters.findAll("li"):
-                self.chapter_ids.append(str(chapter.a['href'].split("/")[-1]))
+                self.chapter_ids.append(str(chapter.a["href"].split("/")[-1]))
                 self.chapter_names.append(str(chapter.a.string))
         else:
             self.chapter_ids = [""]
@@ -396,7 +396,7 @@ class Work:
     
     @threadable.threadable
     def leave_kudos(self):
-        """Leave a 'kudos' in this work.
+        """Leave a "kudos" in this work.
         This function is threadable.
 
         Raises:
@@ -486,7 +486,7 @@ class Work:
         """
 
         from .users import User
-        authors = self._soup.find_all("h3", {'class': 'byline heading'})
+        authors = self._soup.find_all("h3", {"class": "byline heading"})
         formatted_authors = authors[0].text.replace("\n", "").split(", ")
         author_list = []
         if authors is not None:
@@ -504,7 +504,7 @@ class Work:
             int: number of chapters
         """
         
-        chapters = self._soup.find("dd", {'class': 'chapters'})
+        chapters = self._soup.find("dd", {"class": "chapters"})
         if chapters is not None:
             return int(self.str_format(chapters.string.split("/")[0]))
         return 0
@@ -517,7 +517,7 @@ class Work:
         Returns:
             int: number of chapters
         """
-        chapters = self._soup.find("dd", {'class': 'chapters'})
+        chapters = self._soup.find("dd", {"class": "chapters"})
         if chapters is not None:
             n = self.str_format(chapters.string.split("/")[-1])
             if n.isdigit():
@@ -542,7 +542,7 @@ class Work:
             int: number of hits
         """
 
-        hits = self._soup.find("dd", {'class': 'hits'})
+        hits = self._soup.find("dd", {"class": "hits"})
         if hits is not None:
             return int(self.str_format(hits.string))
         return 0
@@ -555,7 +555,7 @@ class Work:
             int: number of kudos
         """
 
-        kudos = self._soup.find("dd", {'class': 'kudos'})
+        kudos = self._soup.find("dd", {"class": "kudos"})
         if kudos is not None:
             return int(self.str_format(kudos.string))
         return 0
@@ -568,7 +568,7 @@ class Work:
             int: number of comments
         """
 
-        comments = self._soup.find("dd", {'class': 'comments'})
+        comments = self._soup.find("dd", {"class": "comments"})
         if comments is not None:
             return int(self.str_format(comments.string))
         return 0
@@ -580,7 +580,7 @@ class Work:
         Returns:
             int: True if work is restricted
         """
-        return self._soup.find("img", {'title': 'Restricted'}) is not None
+        return self._soup.find("img", {"title": "Restricted"}) is not None
 
     @cached_property
     def words(self):
@@ -590,7 +590,7 @@ class Work:
             int: number of words
         """
 
-        words = self._soup.find("dd", {'class': 'words'})
+        words = self._soup.find("dd", {"class": "words"})
         if words is not None:
             return int(self.str_format(words.string))
         return 0
@@ -603,7 +603,7 @@ class Work:
             str: Language
         """
 
-        language = self._soup.find("dd", {'class': 'language'})
+        language = self._soup.find("dd", {"class": "language"})
         if language is not None:
             return language.string.strip()
         else:
@@ -617,7 +617,7 @@ class Work:
             int: number of bookmarks
         """
 
-        bookmarks = self._soup.find("dd", {'class': 'bookmarks'})
+        bookmarks = self._soup.find("dd", {"class": "bookmarks"})
         if bookmarks is not None:
             return int(self.str_format(bookmarks.string))
         return 0
@@ -630,7 +630,7 @@ class Work:
             str: work title
         """
 
-        title = self._soup.find("div", {'class': 'preface group'})
+        title = self._soup.find("div", {"class": "preface group"})
         if title is not None:
             return str(title.h2.text.strip())
         return ""
@@ -643,7 +643,7 @@ class Work:
             datetime.date: publish date
         """
 
-        dp = self._soup.find("dd", {'class': 'published'}).string
+        dp = self._soup.find("dd", {"class": "published"}).string
         return datetime(*list(map(int, dp.split("-"))))
 
     @cached_property
@@ -681,7 +681,7 @@ class Work:
             list: List of tags
         """
 
-        html = self._soup.find("dd", {'class': 'freeform tags'})
+        html = self._soup.find("dd", {"class": "freeform tags"})
         tags = []
         if html is not None:
             for tag in html.find_all("li"):
@@ -696,7 +696,7 @@ class Work:
             list: List of characters
         """
 
-        html = self._soup.find("dd", {'class': 'character tags'})
+        html = self._soup.find("dd", {"class": "character tags"})
         characters = []
         if html is not None:
             for character in html.find_all("li"):
@@ -711,7 +711,7 @@ class Work:
             list: List of relationships
         """
         
-        html = self._soup.find("dd", {'class': 'relationship tags'})
+        html = self._soup.find("dd", {"class": "relationship tags"})
         relationships = []
         if html is not None:
             for relationship in html.find_all("li"):
@@ -726,7 +726,7 @@ class Work:
             list: List of fandoms
         """
 
-        html = self._soup.find("dd", {'class': 'fandom tags'})
+        html = self._soup.find("dd", {"class": "fandom tags"})
         fandoms = []
         if html is not None:
             for fandom in html.find_all("li"):
@@ -741,7 +741,7 @@ class Work:
             list: List of categories
         """
 
-        html = self._soup.find("dd", {'class': 'category tags'})
+        html = self._soup.find("dd", {"class": "category tags"})
         categories = []
         if html is not None:
             for category in html.find_all("li"):
@@ -756,7 +756,7 @@ class Work:
             list: List of warnings
         """
 
-        html = self._soup.find("dd", {'class': 'warning tags'})
+        html = self._soup.find("dd", {"class": "warning tags"})
         warnings = []
         if html is not None:
             for warning in html.find_all("li"):
@@ -771,7 +771,7 @@ class Work:
             str: Rating
         """
 
-        html = self._soup.find("dd", {'class': 'rating tags'})
+        html = self._soup.find("dd", {"class": "rating tags"})
         if html is not None:
             rating = html.a.string
             return rating
@@ -785,10 +785,10 @@ class Work:
             str: Summary
         """
 
-        div = self._soup.find("div", {'class': 'preface group'})
+        div = self._soup.find("div", {"class": "preface group"})
         if div is None:
             return ""
-        html = div.find("blockquote", {'class': 'userstuff'})
+        html = div.find("blockquote", {"class": "userstuff"})
         if html is None:
             return ""
         return str(BeautifulSoup.getText(html))

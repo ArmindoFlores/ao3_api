@@ -159,7 +159,7 @@ class Session(GuestSession):
         self.session = requests.Session()
         
         soup = self.request("https://archiveofourown.org/users/login")
-        self.authenticity_token = soup.find("input", {'name': 'authenticity_token'})['value']
+        self.authenticity_token = soup.find("input", {"name": 'authenticity_token'})["value"]
         payload = {'user[login]': username,
                    'user[password]': password,
                    'authenticity_token': self.authenticity_token}
@@ -282,7 +282,7 @@ class Session(GuestSession):
     def _load_subscriptions(self, page=1):        
         url = self._subscriptions_url.format(self.username, page)
         soup = self.request(url)
-        subscriptions = soup.find("dl", {'class': 'subscription index group'})
+        subscriptions = soup.find("dl", {"class": "subscription index group"})
         for sub in subscriptions.find_all("dt"):
             type_ = "work"
             user = None
@@ -291,19 +291,19 @@ class Session(GuestSession):
             workname = None
             authors = []
             for a in sub.find_all("a"):
-                if 'rel' in a.attrs.keys():
-                    if "author" in a['rel']:
+                if "rel" in a.attrs.keys():
+                    if "author" in a["rel"]:
                         authors.append(User(str(a.string), load=False))
-                elif a['href'].startswith("/works"):
+                elif a["href"].startswith("/works"):
                     workname = str(a.string)
-                    workid = utils.workid_from_url(a['href'])
-                elif a['href'].startswith("/users"):
+                    workid = utils.workid_from_url(a["href"])
+                elif a["href"].startswith("/users"):
                     type_ = "user"
                     user = User(str(a.string), load=False)
                 else:
                     type_ = "series"
                     workname = str(a.string)
-                    series = int(a['href'].split("/")[-1])
+                    series = int(a["href"].split("/")[-1])
             if type_ == "work":
                 new = Work(workid, load=False)
                 setattr(new, "title", workname)
@@ -381,19 +381,19 @@ class Session(GuestSession):
     def _load_history(self, page=1):       
         url = self._history_url.format(self.username, page)
         soup = self.request(url)
-        history = soup.find("ol", {'class': 'reading work index group'})
-        for item in history.find_all("li", {'class': 'reading work blurb group'}):
+        history = soup.find("ol", {"class": "reading work index group"})
+        for item in history.find_all("li", {"class": "reading work blurb group"}):
             # authors = []
             workname = None
             workid = None
             for a in item.h4.find_all("a"):
                 if a.attrs["href"].startswith("/works"):
                     workname = str(a.string)
-                    workid = utils.workid_from_url(a['href'])
+                    workid = utils.workid_from_url(a["href"])
 
             visited_date = None
             visited_num = 1
-            for viewed in item.find_all("h4", {'class': "viewed heading" }):
+            for viewed in item.find_all("h4", {"class": "viewed heading" }):
                 data_string = str(viewed)
                 date_str = re.search('<span>Last visited:</span> (\d{2} .+ \d{4})', data_string)
                 if date_str is not None:
@@ -464,16 +464,16 @@ class Session(GuestSession):
     def _load_bookmarks(self, page=1):       
         url = self._bookmarks_url.format(self.username, page)
         soup = self.request(url)
-        bookmarks = soup.find("ol", {'class': 'bookmark index group'})
-        for bookm in bookmarks.find_all("li", {'class': 'bookmark blurb group'}):
+        bookmarks = soup.find("ol", {"class": "bookmark index group"})
+        for bookm in bookmarks.find_all("li", {"class": "bookmark blurb group"}):
             authors = []
             for a in bookm.h4.find_all("a"):
-                if 'rel' in a.attrs.keys():
-                    if "author" in a['rel']:
+                if "rel" in a.attrs.keys():
+                    if "author" in a["rel"]:
                         authors.append(User(str(a.string), load=False))
                 elif a.attrs["href"].startswith("/works"):
                     workname = str(a.string)
-                    workid = utils.workid_from_url(a['href'])
+                    workid = utils.workid_from_url(a["href"])
             
             new = Work(workid, load=False)
             setattr(new, "title", workname)
@@ -492,8 +492,8 @@ class Session(GuestSession):
 
         url = self._bookmarks_url.format(self.username, 1)
         soup = self.request(url)
-        div = soup.find("div", {'id': 'inner'})
-        span = div.find("span", {'class': 'current'}).getText().replace("(", "").replace(")", "")
+        div = soup.find("div", {"id": "inner"})
+        span = div.find("span", {"class": "current"}).getText().replace("(", "").replace(")", "")
         n = span.split(" ")[1]
         
         return int(self.str_format(n))    
