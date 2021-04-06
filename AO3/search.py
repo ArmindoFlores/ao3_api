@@ -43,7 +43,8 @@ class Search:
         completion_status=None,
         page=1,
         sort_column="",
-        sort_direction=""):
+        sort_direction="",
+        session=None):
 
         self.any_field = any_field
         self.title = title
@@ -60,6 +61,8 @@ class Search:
         self.page = page
         self.sort_column = sort_column
         self.sort_direction = sort_direction
+        
+        self.session = session
 
         self.results = None
         self.pages = 0
@@ -75,9 +78,9 @@ class Search:
             self.any_field, self.title, self.author, self.single_chapter,
             self.word_count, self.language, self.fandoms, self.rating, self.hits,
             self.bookmarks, self.comments, self.completion_status, self.page,
-            self.sort_column, self.sort_direction)
+            self.sort_column, self.sort_direction, self.session)
 
-        results = soup.find("ol", {'class': 'work index group'})
+        results = soup.find("ol", {'class': ("work", "index", "group")})
         if results is None and soup.find("p", text="No results found. You may want to edit your search to make it less specific.") is not None:
             self.results = []
             self.total_results = 0
@@ -85,7 +88,7 @@ class Search:
             return
 
         works = []
-        for work in results.find_all("li", {'class': 'work blurb group'}):
+        for work in results.find_all("li", {"class": ("work", "blurb", "group")}):
             if work.h4 is None:
                 continue
 
@@ -138,6 +141,7 @@ class Search:
             words = int(stats.find("dd", class_="words").text.replace(",", ""))
             chapters = int(stats.find("dd", class_="chapters").text.split('/')[0].replace(",", ""))
             hits = int(stats.find("dd", class_="hits").text.replace(",", ""))
+            restricted = work.find("img", {"title": "Restricted"}) is not None
 
             new = Work(workid, load=False)
             setattr(new, "authors", authors)
@@ -155,6 +159,7 @@ class Search:
             setattr(new, "chapters", chapters)
             setattr(new, "hits", chapters)
             setattr(new, "title", workname)
+            setattr(new, "restricted", restricted)
             works.append(new)
 
         self.results = works
@@ -177,7 +182,8 @@ def search(
     completion_status=None,
     page=1,
     sort_column="",
-    sort_direction=""):
+    sort_direction="",
+    session=None):
     """Returns the results page for the search as a Soup object
 
     Args:
@@ -195,6 +201,7 @@ def search(
         page (int, optional): Page number. Defaults to 1.
         sort_column (str, optional): Which column to sort on. Defaults to "".
         sort_direction (str, optional): Which direction to sort. Defaults to "".
+        session (AO3.Session, optional): Session object. Defaults to None.
 
     Returns:
         bs4.BeautifulSoup: Search result's soup
@@ -234,7 +241,10 @@ def search(
 
     url = f"https://archiveofourown.org/works/search?{query.string}"
 
-    req = requester.request("get", url)
+    if session is None:
+        req = requester.request("get", url)
+    else:
+        req = session.get(url)
     if req.status_code == 429:
         raise utils.HTTPError("We are being rate-limited. Try again in a while or reduce the number of requests")
     soup = BeautifulSoup(req.content, features="lxml")
