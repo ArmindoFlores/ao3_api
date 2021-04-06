@@ -297,11 +297,11 @@ def comment(commentable, comment_text, sess, fullwork=False, commentid=None, ema
 
     raise UnexpectedResponseError(f"Unexpected HTTP status code received ({response.status_code})")
 
-def delete_comment(commentid, session):
+def delete_comment(comment, session):
     """Deletes the specified comment
 
     Args:
-        commentid (int/str): Comment id
+        comment (AO3.Comment): Comment object
         session (AO3.Session): Session object
 
     Raises:
@@ -314,15 +314,14 @@ def delete_comment(commentid, session):
         raise PermissionError("You don't have permission to do this")
     
     data = {
-        "authenticity_token": session.authenticity_token,
+        "authenticity_token": comment.authenticity_token,
         "_method": "delete"
     }
     
-    req = session.post(f"https://archiveofourown.org/comments/{commentid}", data=data, allow_redirects=False)
+    req = session.post(f"https://archiveofourown.org/comments/{comment.id}", data=data)
+    with open("f.html", "wb") as f: f.write(req.content)
     if req.status_code == 429:
         raise HTTPError("We are being rate-limited. Try again in a while or reduce the number of requests")
-    if req.status_code == 302:
-        return
     else:
         soup = BeautifulSoup(req.content, "lxml")
         if "auth error" in soup.title.getText().lower():
@@ -331,7 +330,6 @@ def delete_comment(commentid, session):
             error = soup.find("div", {"id": "main"}).getText()
             if "you don't have permission" in error.lower():
                 raise PermissionError("You don't have permission to do this")
-    raise UnexpectedResponseError("An unexpected error has occurred")
             
 def kudos(work, session):
     """Leave a 'kudos' in a specific work
