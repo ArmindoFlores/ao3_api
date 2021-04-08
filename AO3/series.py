@@ -30,7 +30,7 @@ class Series:
             self.reload()
             
     def __eq__(self, other):
-        return isinstance(other, Series) and other.id == self.id
+        return isinstance(other, __class__) and other.id == self.id
     
     def __repr__(self):
         try:

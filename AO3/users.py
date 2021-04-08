@@ -37,7 +37,7 @@ class User:
         return f"<User [{self.username}]>"
     
     def __eq__(self, other):
-        return isinstance(other, User) and other.username == self.username
+        return isinstance(other, __class__) and other.username == self.username
     
     def __getstate__(self):
         d = {}
