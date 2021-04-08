@@ -1,5 +1,6 @@
 from functools import cached_property
 
+import bs4
 from bs4 import BeautifulSoup
 
 from . import threadable, utils
@@ -22,6 +23,8 @@ class Chapter:
             self.reload()
             
     def __repr__(self):
+        if self.id is None:
+            return f"Chapter [ONESHOT] from [{self.work}]"
         try:
             return f"<Chapter [{self.title} ({self.number})] from [{self.work}]>"
         except:
@@ -86,13 +89,17 @@ class Chapter:
             requests.models.Response: Response object
         """
         
+        if self.id is None:
+            return self._work.comment(comment_text, email, name)
+        
         if not self.loaded:
             raise utils.UnloadedError("Chapter isn't loaded. Have you tried calling Chapter.reload()?")
         
         if self._session is None:
             raise utils.AuthError("Invalid session")
             
-        return utils.comment(self, comment_text, self._session, False, email=email, name=name)
+        if self.id is not None:
+            return utils.comment(self, comment_text, self._session, False, email=email, name=name)
     
     def get_comments(self, maximum=None):
         """Returns a list of all threads of comments in the chapter. This operation can take a very long time.
@@ -110,6 +117,9 @@ class Chapter:
         Returns:
             list: List of comments
         """
+        
+        if self.id is None:
+            return self._work.get_comments(maximum=maximum)
         
         if not self.loaded:
             raise utils.UnloadedError("Chapter isn't loaded. Have you tried calling Chapter.reload()?")
@@ -148,8 +158,7 @@ class Chapter:
                 else:
                     text = ""                  
                 
-                comment = Comment(id_, self, session=self._session, load=False)      
-                print(comment.parent)       
+                comment = Comment(id_, self, session=self._session, load=False)       
                 setattr(comment, "authenticity_token", self.authenticity_token)
                 setattr(comment, "author", author)
                 setattr(comment, "text", text)
@@ -195,25 +204,34 @@ class Chapter:
     def text(self):
         """This chapter's text"""
         text = ""
-        div = self._soup.find("div", {"role": "article"})
-        for p in div.findAll("p"):
+        if self.id is not None:
+            div = self._soup.find("div", {"role": "article"})
+        else:
+            div = self._soup
+        for p in div.findAll(("p", "center")):
             text += p.getText().replace("\n", "") + "\n"
+            if isinstance(p.next_sibling, bs4.element.NavigableString):
+                text += str(p.next_sibling)
         return text
 
     @cached_property
     def title(self):
         """This chapter's title"""
+        if self.id is None:
+            return self.work.title
         preface_group = self._soup.find("div", {"class": ("chapter", "preface", "group")})
         if preface_group is None:
-            return str(number)
+            return str(self.number)
         title = preface_group.find("h3", {"class": "title"})
         if title is None:
-            return str(number)
+            return str(self.number)
         return tuple(title.strings)[-1].strip()[2:]
         
     @cached_property
     def number(self):
         """This chapter's number"""
+        if self.id is None:
+            return 1
         return int(self._soup["id"].split("-")[-1])
     
     @cached_property
