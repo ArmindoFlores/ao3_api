@@ -1,3 +1,4 @@
+import warnings
 from datetime import datetime
 from functools import cached_property
 
@@ -97,6 +98,7 @@ class Work:
         
         for n in range(1, self.nchapters+1):
             chapter = chapters_div.find("div", {"id": f"chapter-{n}"})
+            chapter.extract()
             if chapter is None:
                 continue
             preface_group = chapter.find("div", {"class": ("chapter", "preface", "group")})
@@ -180,7 +182,7 @@ class Work:
         normal_fields = (
             "bookmarks", 
             "categories",
-            "chapters",
+            "nchapters",
             "characters",
             "complete",
             "expected_chapters",
@@ -222,6 +224,10 @@ class Work:
             pass
         try:
             metadata["series"] = list(map(lambda series: series.name, self.series))
+        except AttributeError:
+            pass
+        try:
+            metadata["chapter_titles"] = list(map(lambda chapter: chapter.title, self.chapters))
         except AttributeError:
             pass
 
@@ -814,6 +820,8 @@ class Work:
         """
 
         req = self.get(url)
+        if len(req.content) > 650000:
+            warnings.warn("This work is very big and might take a very long time to load")
         soup = BeautifulSoup(req.content, "lxml")
         return soup
 
