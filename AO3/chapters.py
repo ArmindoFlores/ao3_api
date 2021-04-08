@@ -1,6 +1,11 @@
 from functools import cached_property
 
+from bs4 import BeautifulSoup
+
 from . import threadable, utils
+from .comments import Comment
+from .requester import requester
+from .users import User
 
 
 class Chapter:
@@ -64,6 +69,93 @@ class Chapter:
                     delattr(self, attr)
         
         self.work.reload()
+        
+    @threadable.threadable
+    def comment(self, comment_text, email="", name=""):
+        """Leaves a comment on this chapter.
+        This function is threadable.
+
+        Args:
+            comment_text (str): Comment text
+
+        Raises:
+            utils.UnloadedError: Couldn't load chapters
+            utils.AuthError: Invalid session
+
+        Returns:
+            requests.models.Response: Response object
+        """
+        
+        if not self.loaded:
+            raise utils.UnloadedError("Chapter isn't loaded. Have you tried calling Chapter.reload()?")
+        
+        if self._session is None:
+            raise utils.AuthError("Invalid session")
+            
+        return utils.comment(self, comment_text, self._session, False, email=email, name=name)
+    
+    def get_comments(self, maximum=None):
+        """Returns a list of all threads of comments in the chapter. This operation can take a very long time.
+        Because of that, it is recomended that you set a maximum number of comments. 
+        Duration: ~ (0.13 * n_comments) seconds or 2.9 seconds per comment page
+
+        Args:
+            maximum (int, optional): Maximum number of comments to be returned. None -> No maximum
+
+        Raises:
+            ValueError: Invalid chapter number
+            IndexError: Invalid chapter number
+            utils.UnloadedError: Chapter isn't loaded
+
+        Returns:
+            list: List of comments
+        """
+        
+        if not self.loaded:
+            raise utils.UnloadedError("Chapter isn't loaded. Have you tried calling Chapter.reload()?")
+            
+        url = f"https://archiveofourown.org/chapters/{self.id}?page=%d&show_comments=true&view_adult=true"
+        soup = self.request(url%1)
+        
+        pages = 0
+        div = soup.find("div", {"id": "comments_placeholder"})
+        ol = div.find("ol", {"class": "pagination actions"})
+        if ol is None:
+            pages = 1
+        else:
+            for li in ol.findAll("li"):
+                if li.getText().isdigit():
+                    pages = int(li.getText())   
+        
+        comments = []
+        for page in range(pages):
+            if page != 0:
+                soup = self.request(url%(page+1))
+            ol = soup.find("ol", {"class": "thread"})
+            for li in ol.findAll("li", {"role": "article"}, recursive=False):
+                if maximum is not None and len(comments) >= maximum:
+                    return comments
+                id_ = int(li.attrs["id"][8:])
+                
+                header = li.find("h4", {"class": ("heading", "byline")})
+                if header is None:
+                    author = None
+                else:
+                    author = User(str(header.a.text), self._session, False)
+                    
+                if li.blockquote is not None:
+                    text = li.blockquote.getText()
+                else:
+                    text = ""                  
+                
+                comment = Comment(id_, self, session=self._session, load=False)      
+                print(comment.parent)       
+                setattr(comment, "authenticity_token", self.authenticity_token)
+                setattr(comment, "author", author)
+                setattr(comment, "text", text)
+                comment._thread = None
+                comments.append(comment)
+        return comments
         
     def get_images(self):
         """Gets all images from this work
@@ -161,3 +253,28 @@ class Chapter:
         for p in notes.findAll("p"):
             text += p.getText() + "\n"
         return text
+    
+    def request(self, url):
+        """Request a web page and return a BeautifulSoup object.
+
+        Args:
+            url (str): Url to request
+
+        Returns:
+            bs4.BeautifulSoup: BeautifulSoup object representing the requested page's html
+        """
+
+        req = self.get(url)
+        soup = BeautifulSoup(req.content, "lxml")
+        return soup
+    
+    def get(self, *args, **kwargs):
+        """Request a web page and return a Response object"""  
+        
+        if self._session is None:
+            req = requester.request("get", *args, **kwargs)
+        else:
+            req = requester.request("get", *args, **kwargs, session=self._session.session)
+        if req.status_code == 429:
+            raise utils.HTTPError("We are being rate-limited. Try again in a while or reduce the number of requests")
+        return req
