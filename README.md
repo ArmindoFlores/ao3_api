@@ -19,7 +19,7 @@ https://github.com/ArmindoFlores/ao3_api
 
 # Usage
 
-This package is divided in 8 core modules: works, users, series, search, session, comments, extra, and utils.
+This package is divided in 9 core modules: works, chapters, users, series, search, session, comments, extra, and utils.
 
 ## Works
 
@@ -34,7 +34,7 @@ url = "https://archiveofourown.org/works/14392692/chapters/33236241"
 workid = AO3.utils.workid_from_url(url)
 print(f"Work ID: {workid}")
 work = AO3.Work(workid)
-print(f"Chapters: {work.chapters}")
+print(f"Chapters: {work.nchapters}")
 ```
 
 After running this snippet, we get the output:
@@ -51,19 +51,21 @@ import AO3
 
 work = AO3.Work(14392692)
 
-print(work.chapter_names[1])  # Second chapter name
-text = work.get_chapter_text(2)  # Second chapter text
+print(work.chapters[1].title)  # Second chapter name
+text = work.chapters[1].text  # Second chapter text
 print(' '.join(text.split(" ")[:20]))
 ```
 
 ```
-2. What Branches Grow Meaning
-
-Chapter Text
-
+What Branches Grow Meaning
 December 27, 2018
- Christmas sucked this year, and Shouto’s got the black eye to prove it.Things had started out well
+ 
+Christmas sucked this year, and Shouto’s got the black eye to prove it.
+Things had started out well enough,
 ```
+
+The objects in work.chapters are of type `AO3.Chapter`. They have a lot of the same properties as a `Work` object would.
+
 
 Another thing you can do with the work object is download the entire work as a pdf or e-book.
 
@@ -121,13 +123,14 @@ print(f"Loaded {len(works)} works in {round(time.time()-start, 1)} seconds.")
 
 As we can see, there is a significant performance increase. There are other functions in this package which have this functionality. To see if a function is "threadable", either use `hasattr(function, "_threadable")` or check its `__doc__` string.
 
+To save even more time, if you're only interested in metadata, you can load a work with the `load_chapters` option set to False. Also, be aware that some functions (like `Series.work_list` or `Search.results`) might return semi-loaded `Work` objects. This means that no requests have been made to load this work (so you don't have access to chapter text, notes, etc...) but almost all of its metadata will already have been cached, and you might not need to call `Work.reload()` at all. 
+
 The last important information about the `Work` class is that most of its properties (like the number of bookmarks, kudos, the authors' names, etc...) are cached properties. That means that once you check them once, the value is stored and it won't ever change, even if those values change. To update these values, you will need to call `Work.reload()`. See the example below:
 
 ```py3
 import AO3
 
 sess = AO3.GuestSession()
-sess.refresh_auth_token()
 work = AO3.Work(16721367, sess)
 print(work.kudos)
 work.leave_kudos()
@@ -214,7 +217,7 @@ import AO3
 session = AO3.Session("username", "password")
 print(f"Bookmarks: {session.bookmarks}")
 session.refresh_auth_token()
-print(session.kudos(14392692))
+print(session.kudos(AO3.Work(18001499, load=False))
 ```
 
 ```
@@ -224,7 +227,7 @@ True
 
 We successfully left kudos in a work and checked our bookmarks. The `session.refresh_auth_token()` is needed for some activities such as leaving kudos and comments. If it is expired or you forget to call this function, the error `AO3.utils.AuthError: Invalid authentication token. Try calling session.refresh_auth_token()` will be raised.
 
-You can also comment / leave kudos in a work by calling `Work.leave_kudos()`/`Work.comment()` and passing the session as an argument.
+You can also comment / leave kudos in a work by calling `Work.leave_kudos()`/`Work.comment()` and provided you have instantiated that object with a session already (`AO3.Work(xxxxxx, session=sess)` or using `Work.set_session()`). This is probably the best way to do so because you will run into less authentication issues (as the work's authenticity token will be used instead).
 
 If you would prefer to leave a comment or kudos anonimously, you can use an `AO3.GuestSession` in the same way you'd use a normal session, except you won't be able to check your bookmarks, subscriptions, etc... because you're not actually logged in.
 
@@ -242,7 +245,7 @@ import AO3
 work = AO3.Work(24560008)
 work.load_chapters()
 start = time()
-comments = work.get_comments(1, 5)
+comments = work.get_comments(5)
 print(f"Loaded {len(comments)} comment threads in {round(time()-start, 1)} seconds\n")
 for comment in comments:
     print(f"Comment ID: {comment.id}\nReplies: {len(comment.get_thread())}")
@@ -263,7 +266,8 @@ Comment ID: 312285673
 Replies: 2
 ```
 
-Loading comments takes a very long time so you should try and use it as little as possible. It also causes lots of requests to be sent to the AO3 servers, which might result in getting the error `utils.HTTPError: We are being rate-limited. Try again in a while or reduce the number of requests`. If it happens, you should try to space out your requests or reduce their number. There is also the option to enable request limiting using `AO3.utils.limit_requests()`, which make it so you can't make more than x requests in a certain time window. However, right now it doesn't seem to work, as despite AO3's code stating that requests are throttled at 60 per minute, you still get HTTP 429 errors at 40 rpm. 
+Loading comments takes a very long time so you should try and use it as little as possible. It also causes lots of requests to be sent to the AO3 servers, which might result in getting the error `utils.HTTPError: We are being rate-limited. Try again in a while or reduce the number of requests`. If it happens, you should try to space out your requests or reduce their number. There is also the option to enable request limiting using `AO3.utils.limit_requests()`, which make it so you can't make more than x requests in a certain time window.
+You can also reply to comments using the `Comment.reply()` function, or delete one (if it's yours) using `Comment.delete()`.
 
 
 ## Extra
