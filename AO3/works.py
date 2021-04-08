@@ -16,13 +16,14 @@ class Work:
     AO3 work object
     """
 
-    def __init__(self, workid, session=None, load=True):
+    def __init__(self, workid, session=None, load=True, load_chapters=True):
         """Creates a new AO3 work object
 
         Args:
             workid (int): AO3 work ID
             session (AO3.Session, optional): Used to access restricted works
             load (bool, optional): If true, the work is loaded on initialization. Defaults to True.
+            load_chapters (bool, optional): If false, chapter text won't be parsed, and Work.load_chapters() will have to be called. Defaults to True.
 
         Raises:
             utils.InvalidIdError: Raised if the work wasn't found
@@ -33,7 +34,7 @@ class Work:
         self.id = workid
         self._soup = None
         if load:
-            self.reload()
+            self.reload(load_chapters)
             
     def __repr__(self):
         try:
@@ -62,10 +63,13 @@ class Work:
                 self.__dict__[attr] = value
         
     @threadable.threadable
-    def reload(self):
+    def reload(self, load_chapters=True):
         """
         Loads information about this work.
         This function is threadable.
+        
+        Args:
+            load_chapters (bool, optional): If false, chapter text won't be parsed, and Work.load_chapters() will have to be called. Defaults to True.
         """
         
         for attr in self.__class__.__dict__:
@@ -76,7 +80,8 @@ class Work:
         self._soup = self.request(f"https://archiveofourown.org/works/{self.id}?view_adult=true&view_full_work=true")
         if "Error 404" in self._soup.text:
             raise utils.InvalidIdError("Cannot find work")
-        self._load_chapters()
+        if load_chapters:
+            self.load_chapters()
         
     def set_session(self, session):
         """Sets the session used to make requests for this work
@@ -87,7 +92,7 @@ class Work:
         
         self._session = session 
 
-    def _load_chapters(self):
+    def load_chapters(self):
         """Loads chapter objects for each one of this work's chapters
         """
         
@@ -96,20 +101,25 @@ class Work:
         if chapters_div is None:
             return
         
-        for n in range(1, self.nchapters+1):
-            chapter = chapters_div.find("div", {"id": f"chapter-{n}"})
-            chapter.extract()
-            if chapter is None:
-                continue
-            preface_group = chapter.find("div", {"class": ("chapter", "preface", "group")})
-            if preface_group is None:
-                continue
-            title = preface_group.find("h3", {"class": "title"})
-            if title is None:
-                continue
-            id_ = int(title.a["href"].split("/")[-1])
-            c = Chapter(id_, self, self._session, False)
-            c._soup = chapter
+        if self.nchapters > 1:
+            for n in range(1, self.nchapters+1):
+                chapter = chapters_div.find("div", {"id": f"chapter-{n}"})
+                if chapter is None:
+                    continue
+                chapter.extract()
+                preface_group = chapter.find("div", {"class": ("chapter", "preface", "group")})
+                if preface_group is None:
+                    continue
+                title = preface_group.find("h3", {"class": "title"})
+                if title is None:
+                    continue
+                id_ = int(title.a["href"].split("/")[-1])
+                c = Chapter(id_, self, self._session, False)
+                c._soup = chapter
+                self.chapters.append(c)
+        else:
+            c = Chapter(None, self, self._session, False)
+            c._soup = chapters_div
             self.chapters.append(c)
         
     def get_images(self):
