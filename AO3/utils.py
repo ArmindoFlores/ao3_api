@@ -226,10 +226,14 @@ def comment(commentable, comment_text, sess, fullwork=False, commentid=None, ema
         requests.models.Response: Response object
     """
 
+    if commentable.authenticity_token is not None:
+        at = commentable.authenticity_token
+    else:
+        at = sess.authenticity_token
     headers = {
         "x-requested-with": "XMLHttpRequest",
         "x-newrelic-id": "VQcCWV9RGwIJVFFRAw==",
-        "x-csrf-token": commentable.authenticity_token
+        "x-csrf-token": at
     }
     
     data = {}
@@ -264,7 +268,7 @@ def comment(commentable, comment_text, sess, fullwork=False, commentid=None, ema
             raise PseudError("Couldn't find your pseud's id")
             
         data.update({
-            "authenticity_token": sess.authenticity_token,
+            "authenticity_token": at,
             "comment[pseud_id]": pseud_id,
             "comment[comment_content]": comment_text,
         })
@@ -274,7 +278,7 @@ def comment(commentable, comment_text, sess, fullwork=False, commentid=None, ema
             raise ValueError("You need to specify both an email and a name!")
         
         data.update({
-            "authenticity_token": commentable.authenticity_token,
+            "authenticity_token": at,
             "comment[email]": email,
             "comment[name]": name,
             "comment[comment_content]": comment_text,
@@ -313,16 +317,20 @@ def delete_comment(comment, session):
         utils.UnexpectedResponseError: Unknown error
     """
     
-    if not session.is_authed:
+    if session is None or not session.is_authed:
         raise PermissionError("You don't have permission to do this")
     
+    if comment.authenticity_token is not None:
+        at = comment.authenticity_token
+    else:
+        at = session.authenticity_token
+    
     data = {
-        "authenticity_token": comment.authenticity_token,
+        "authenticity_token": at,
         "_method": "delete"
     }
     
     req = session.post(f"https://archiveofourown.org/comments/{comment.id}", data=data)
-    with open("f.html", "wb") as f: f.write(req.content)
     if req.status_code == 429:
         raise HTTPError("We are being rate-limited. Try again in a while or reduce the number of requests")
     else:
@@ -349,8 +357,12 @@ def kudos(work, session):
         bool: True if successful, False if you already left kudos there
     """
     
+    if work.authenticity_token is not None:
+        at = work.authenticity_token
+    else:
+        at = session.authenticity_token
     data = {
-        "authenticity_token": work.authenticity_token,
+        "authenticity_token": at,
         "kudo[commentable_id]": work.id,
         "kudo[commentable_type]": "Work"
     }
@@ -395,11 +407,16 @@ def subscribe(subscribable, worktype, session, unsubscribe=False, subid=None):
         InvalidIdError: Invalid subid
     """
     
-    if not session.is_authed:
+    if session is None or not session.is_authed:
         raise AuthError("Invalid session")
     
+    if subscribable.authenticity_token is not None:
+        at = subscribable.authenticity_token
+    else:
+        at = session.authenticity_token
+    
     data = {
-        "authenticity_token": subscribable.authenticity_token,
+        "authenticity_token": at,
         "subscription[subscribable_id]": subscribable.id,
         "subscription[subscribable_type]": worktype.capitalize()
     }

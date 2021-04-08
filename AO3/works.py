@@ -287,7 +287,7 @@ class Work:
                 id_ = int(li.attrs["id"][8:])
                 
                 header = li.find("h4", {"class": ("heading", "byline")})
-                if header is None:
+                if header is None or header.a is None:
                     author = None
                 else:
                     author = User(str(header.a.text), self._session, False)
@@ -297,8 +297,7 @@ class Work:
                 else:
                     text = ""                  
                 
-                comment = Comment(id_, self, session=self._session, load=False)      
-                print(comment.parent)       
+                comment = Comment(id_, self, session=self._session, load=False)           
                 setattr(comment, "authenticity_token", self.authenticity_token)
                 setattr(comment, "author", author)
                 setattr(comment, "text", text)

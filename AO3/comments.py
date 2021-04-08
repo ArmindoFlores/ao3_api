@@ -129,6 +129,7 @@ class Comment:
             if "role" in comment.attrs:
                 id_ = int(comment.attrs["id"][8:])
                 c = Comment(id_, self.parent, session=self._session, load=False)
+                c.authenticity_token = self.authenticity_token
                 c._thread = []
                 if parent is not None:
                     c.parent_comment = parent
@@ -193,7 +194,6 @@ class Comment:
         
         if self.parent is None:
             raise ValueError("self.parent cannot be 'None'")
-        print(self._session)
         return utils.comment(self.parent, comment_text, self._session, self.fullwork, self.id, email, name)
     
     @threadable.threadable
