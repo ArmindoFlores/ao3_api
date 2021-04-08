@@ -4,6 +4,7 @@ from functools import cached_property
 from bs4 import BeautifulSoup
 
 from . import threadable, utils
+from .chapters import Chapter
 from .comments import Comment
 from .requester import requester
 from .users import User
@@ -27,8 +28,7 @@ class Work:
         """
 
         self._session = session
-        self.chapter_ids = []
-        self.chapter_names = []
+        self.chapters = []
         self.id = workid
         self._soup = None
         if load:
@@ -41,7 +41,7 @@ class Work:
             return f"<Work [{self.id}]>"
     
     def __eq__(self, other):
-        return isinstance(other, Work) and other.id == self.id
+        return isinstance(other, __class__) and other.id == self.id
     
     def __getstate__(self):
         d = {}
@@ -72,10 +72,10 @@ class Work:
                 if attr in self.__dict__:
                     delattr(self, attr)
         
-        self._soup = self.request("https://archiveofourown.org/works/%i?view_adult=true"%self.id)
+        self._soup = self.request(f"https://archiveofourown.org/works/{self.id}?view_adult=true&view_full_work=true")
         if "Error 404" in self._soup.text:
             raise utils.InvalidIdError("Cannot find work")
-        self.load_chapters()
+        self._load_chapters()
         
     def set_session(self, session):
         """Sets the session used to make requests for this work
@@ -86,107 +86,49 @@ class Work:
         
         self._session = session 
 
-    def get_chapter_text(self, chapter):
-        """Gets the chapter text from the specified chapter.
-        If chapter=-1 then it gets the text from all chapters.
-        The work must be loaded first.
-
-        Args:
-            chapter (int): Work chapter
+    def _load_chapters(self):
+        """Loads chapter objects for each one of this work's chapters
+        """
+        
+        self.chapters = []
+        chapters_div = self._soup.find(attrs={"id": "chapters"})
+        if chapters_div is None:
+            return
+        
+        for n in range(1, self.nchapters+1):
+            chapter = chapters_div.find("div", {"id": f"chapter-{n}"})
+            if chapter is None:
+                continue
+            preface_group = chapter.find("div", {"class": ("chapter", "preface", "group")})
+            if preface_group is None:
+                continue
+            title = preface_group.find("h3", {"class": "title"})
+            if title is None:
+                continue
+            id_ = int(title.a["href"].split("/")[-1])
+            c = Chapter(id_, self, self._session, False)
+            c._soup = chapter
+            self.chapters.append(c)
+        
+    def get_images(self):
+        """Gets all images from this work
 
         Raises:
-            utils.UnloadedError: Raises this error if the chapters aren't loaded
+            utils.UnloadedError: Raises this error if the work isn't loaded
 
         Returns:
-            str: Chapter text
+            dict: key = chapter_n; value = chapter.get_images()
         """
         
         if not self.loaded:
             raise utils.UnloadedError("Work isn't loaded. Have you tried calling Work.reload()?")
         
-        text = ""
-        if chapter > 0 and chapter <= self.chapters and not self.oneshot:
-            chapter_html = self.request("https://archiveofourown.org/works/%i/chapters/%s?view_adult=true"%(self.id, self.chapter_ids[chapter-1]))
-            div = chapter_html.find("div", {"role": "article"})
-            for p in div.findAll("p"):
-                text += p.getText().replace("\n", "") + "\n"
-        elif self.oneshot:
-            div = self._soup.find("div", {"role": "article"})
-            for p in div.findAll("p"):
-                text += p.getText().replace("\n", "") + "\n"
-        else:
-            work_html = self.request("https://archiveofourown.org/works/%i/?view_adult=true&view_full_work=true"%(self.id))
-            chapters_div = work_html.find("div", {"id": "chapters"})
-            for div in chapters_div.findAll("div", {"role": "article"}):
-                for p in div.findAll("p"):
-                    text += p.getText().replace("\n", "") + "\n"
-        return text
-    
-    def get_chapter_images(self, chapter):
-        """Gets the chapter text from the specified chapter.
-        Work.load_chapters() must be called first.
-
-        Args:
-            chapter (int): Work chapter
-
-        Raises:
-            utils.UnloadedError: Raises this error if the chapters aren't loaded
-
-        Returns:
-            tuple: Pairs of image urls and the paragraph number
-        """
-        
-        if not self.loaded:
-            raise utils.UnloadedError("Work isn't loaded. Have you tried calling Work.reload()?")
-        if chapter > 0 and chapter <= self.chapters and self.chapters > 1:
-            if len(self.chapter_ids) == self.chapters:
-                chapter_html = self.request("https://archiveofourown.org/works/%i/chapters/%s?view_adult=true"%(self.id, self.chapter_ids[chapter-1]))
-                div = chapter_html.find("div", {"role": "article"})
-                images = []
-                line = 0
-                for p in div.findAll("p"):
-                    line += 1
-                    for img in p.findAll("img"):
-                        images.append((img.attrs["src"], line))
-                return tuple(images)
-            else:
-                raise utils.UnloadedError("Work.load_chapters() must be called first")
-
-        elif chapter == 1:
-            div = self._soup.find("div", {"role": "article"})
-            images = []
-            line = 0
-            for p in div.findAll("p"):
-                line += 1
-                for img in p.findAll("img"):
-                    images.append((img.attrs["src"], line))
-            return tuple(images)
-        else:
-            raise utils.UnloadedError("Work.load_chapters() must be called first")
-    
-    def load_chapters(self):
-        """Loads the urls for all chapters
-
-        Raises:
-            utils.UnloadedError: Work isn't loaded
-            utils.AuthError: This is a private work
-        """
-        
-        if not self.loaded:
-            raise utils.UnloadedError("Work isn't loaded. Have you tried calling Work.reload()?")
-        if not self.oneshot:
-            navigate = self.request("https://archiveofourown.org/works/%i/navigate?view_adult=true"%self.id)
-            all_chapters = navigate.find("ol", {"class": "chapter index group"})
-            if all_chapters is None:
-                raise utils.AuthError("This work is only available to registered users of the Archive")
-            self.chapter_ids = []
-            self.chapter_names = []
-            for chapter in all_chapters.findAll("li"):
-                self.chapter_ids.append(str(chapter.a["href"].split("/")[-1]))
-                self.chapter_names.append(str(chapter.a.string))
-        else:
-            self.chapter_ids = [""]
-            self.chapter_names = [self.title]
+        chapters = {}
+        for chapter in self.chapters:
+            images = chapter.get_images()
+            if len(images) != 0:
+                chapters[chapter.number] = images
+        return chapters
             
     def download(self, filetype="PDF"):
         """Downloads this work
@@ -296,7 +238,7 @@ class Work:
         Raises:
             ValueError: Invalid chapter number
             IndexError: Invalid chapter number
-            utils.UnloadedError: Work.load_chapters() must be called first
+            utils.UnloadedError: Work isn't loaded
 
         Returns:
             list: List of comments
@@ -379,6 +321,16 @@ class Work:
         utils.subscribe(self, "Work", self._session, True, self._sub_id)
         
     @cached_property
+    def text(self):
+        """This work's text"""
+        
+        text = ""
+        for chapter in self.chapters:
+            text += chapter.text
+            text += "\n"
+        return text
+        
+    @cached_property
     def authenticity_token(self):
         """Token used to take actions that involve this work"""
         
@@ -429,17 +381,15 @@ class Work:
         return utils.kudos(self, self._session)
     
     @threadable.threadable
-    def comment(self, chapter, comment_text, email="", name=""):
+    def comment(self, comment_text, email="", name=""):
         """Leaves a comment on this work.
         This function is threadable.
 
         Args:
-            chapter (int): Chapter number
             comment_text (str): Comment text
 
         Raises:
-            IndexError: Invalid chapter number
-            utils.UnloadedError: Couldn't load chapter ids. Call Work.load_chapters() first
+            utils.UnloadedError: Couldn't load chapters
             utils.AuthError: Invalid session
 
         Returns:
@@ -451,17 +401,6 @@ class Work:
         
         if self._session is None:
             raise utils.AuthError("Invalid session")
-        
-        if chapter < 1 or chapter > self.chapters:
-            raise IndexError(f"Invalid chapter number")
-        
-        if len(self.chapter_ids) != self.chapters:
-            raise utils.UnloadedError("Work.load_chapters() must be called first")
-        
-        if self.chapters == 1:
-            chapterid = self.id
-        else:
-            chapterid = self.chapter_ids[chapter-1]
             
         return utils.comment(self, comment_text, self._session, True, email=email, name=name)
     
@@ -473,7 +412,7 @@ class Work:
     @property
     def oneshot(self):
         """Returns True if this work has only one chapter"""
-        return self.chapters == 1
+        return self.nchapters == 1
     
     @cached_property
     def series(self):
@@ -513,7 +452,7 @@ class Work:
         return author_list
 
     @cached_property
-    def chapters(self):
+    def nchapters(self):
         """Returns the number of chapters of this work
 
         Returns:
@@ -548,7 +487,7 @@ class Work:
             str: work status
         """
 
-        return "Completed" if self.chapters == self.expected_chapters else "Work in Progress"
+        return "Completed" if self.nchapters == self.expected_chapters else "Work in Progress"
 
     @cached_property
     def hits(self):
@@ -808,6 +747,28 @@ class Work:
         if html is None:
             return ""
         return str(BeautifulSoup.getText(html))
+    
+    @cached_property
+    def start_notes(self):
+        """Text from this work's start notes"""
+        notes = self._soup.find("div", {"class": "notes module"})
+        if notes is None:
+            return ""
+        text = ""
+        for p in notes.findAll("p"):
+            text += p.getText().strip() + "\n"
+        return text
+
+    @cached_property
+    def end_notes(self):
+        """Text from this work's end notes"""
+        notes = self._soup.find("div", {"id": "work_endnotes"})
+        if notes is None:
+            return ""
+        text = ""
+        for p in notes.findAll("p"):
+            text += p.getText() + "\n"
+        return text
     
     @cached_property
     def url(self):
