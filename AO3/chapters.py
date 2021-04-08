@@ -65,13 +65,25 @@ class Chapter:
         Loads information about this chapter.
         This function is threadable.
         """
+        from .works import Work
         
         for attr in self.__class__.__dict__:
             if isinstance(getattr(self.__class__, attr), cached_property):
                 if attr in self.__dict__:
                     delattr(self, attr)
         
-        self.work.reload()
+        if self.work is None:
+            soup = self.request(f"https://archiveofourown.org/chapters/{self.id}?view_adult=true")
+            workid = soup.find("li", {"class": "chapter entire"})
+            if workid is None:
+                raise utils.InvalidIdError("Cannot find work")
+            self._work = Work(utils.workid_from_url(workid.a["href"]))
+        else:
+            self.work.reload()
+            
+        for chapter in self.work.chapters:
+            if chapter == self:
+                self._soup = chapter._soup
         
     @threadable.threadable
     def comment(self, comment_text, email="", name=""):

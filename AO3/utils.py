@@ -199,8 +199,9 @@ def workid_from_url(url):
     except ValueError:
         return
     if len(split_url) >= index+1:
-        if split_url[index+1].isdigit():
-            return int(split_url[index+1])
+        workid = split_url[index+1].split("?")[0]
+        if workid.isdigit():
+            return int(workid)
     return
 
 def comment(commentable, comment_text, sess, fullwork=False, commentid=None, email="", name=""):
