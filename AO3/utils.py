@@ -1,11 +1,11 @@
 import os
 import pickle
+import re
 
 import requests
 from bs4 import BeautifulSoup
 
 from .requester import requester
-
 
 _FANDOMS = None
 _LANGUAGES = None
@@ -101,6 +101,9 @@ class Constraint:
 
     def __str__(self):
         return self.string
+    
+def word_count(text):
+    return len(tuple(filter(lambda w: w != "", re.split(" |\n|\t", text))))
     
 def set_rqtw(value):
     """Sets the requests per time window parameter for the AO3 requester"""
