@@ -8,6 +8,7 @@ or by cloning the repository and building it from source using the `setup.py`.
 
 __Requirements__
 
-    - BeautifulSoup4
-    - Requests
+- BeautifulSoup4
+- Requests
+- LXML
     
