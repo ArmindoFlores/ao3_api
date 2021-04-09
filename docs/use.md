@@ -20,10 +20,10 @@ print(f"Chapters: {work.nchapters}")
 
 After running this snippet, we get the output:
 
-```
-Work ID: 14392692
-Chapters: 46
-```
+
+    Work ID: 14392692
+    Chapters: 46
+
 
 It's important to note that some works may not be accessible to guest users, and in this case you will get 0 chapters as an output, and the error `AO3.utils.AuthError: This work is only available to registered users of the Archive` if you try to load it. Nontheless, we can still do a lot more with this Work object: Lets try to get the first 20 words of the second chapter.
 
@@ -37,13 +37,13 @@ text = work.chapters[1].text  # Second chapter text
 print(' '.join(text.split(" ")[:20]))
 ```
 
-```
-What Branches Grow Meaning
-December 27, 2018
- 
-Christmas sucked this year, and Shouto’s got the black eye to prove it.
-Things had started out well enough,
-```
+
+    What Branches Grow Meaning
+    December 27, 2018
+    
+    Christmas sucked this year, and Shouto’s got the black eye to prove it.
+    Things had started out well enough,
+
 
 The objects in work.chapters are of type `AO3.Chapter`. They have a lot of the same properties as a `Work` object would.
 
@@ -81,7 +81,7 @@ for thread in threads:
 print(f"Loaded {len(works)} works in {round(time.time()-start, 1)} seconds.")
 ```
 
-`Loaded 29 works in 2.2 seconds.`
+    Loaded 29 works in 2.2 seconds.
 
 The `load=False` inside the `Work` constructor makes sure we don't load the work as soon as we create an instance of the class. In the end, we iterate over every thread and wait for the last one to finish using `.join()`. Let's compare this method with the standard way of loading AO3 works:
 
@@ -100,7 +100,7 @@ for work in series.work_list:
 print(f"Loaded {len(works)} works in {round(time.time()-start, 1)} seconds.")
 ```
 
-`Loaded 29 works in 21.6 seconds.`
+    Loaded 29 works in 21.6 seconds.
 
 As we can see, there is a significant performance increase. There are other functions in this package which have this functionality. To see if a function is "threadable", either use `hasattr(function, "_threadable")` or check its `__doc__` string.
 
@@ -119,10 +119,10 @@ work.reload()
 print(work.kudos)
 ```
 
-```
-392
-393
-```
+
+    392
+    393
+
 
 
 
@@ -139,11 +139,11 @@ print(user.bio)
 print(user.works)  # Number of works published
 ```
 
-```
-https://archiveofourown.org/users/bothersomepotato
-University student, opening documents to write essays but writing this stuff instead. No regrets though. My Tumblr, come chat with -or yell at- me if you feel like it! :)
-2
-```
+
+    https://archiveofourown.org/users/bothersomepotato
+    University student, opening documents to write essays but writing this stuff instead. No regrets though. My Tumblr, come chat with -or yell at- me if you feel like it! :)
+    2
+
 
 
 ## Search
@@ -159,29 +159,29 @@ for result in search.results:
   print(result)
 ```
 
-```
-3074
-<Work [five times lexa falls for clarke]>
-<Work [an incomplete list of reasons (why Clarke loves Lexa)]>
-<Work [five times clarke and lexa aren’t sure if they're a couple or not]>
-<Work [Chemistry]>
-<Work [The New Commander (Lexa Joining Camp Jaha)]>
-<Work [Ode to Clarke]>
-<Work [it's always been (right in front of me)]>
-<Work [The Girlfriend Tag]>
-<Work [The After-Heda Chronicles]>
-<Work [The Counter]>
-<Work [May We Meet Again]>
-<Work [No Filter]>
-<Work [The Games We Play]>
-<Work [A l'épreuve des balles]>
-<Work [Celebration]>
-<Work [Another level of fucked up]>
-<Work [(Don't Ever Want to Tame) This Wild Heart]>
-<Work [Self Control]>
-<Work [Winter]>
-<Work [My only wish]>
-```
+
+    3074
+    <Work [five times lexa falls for clarke]>
+    <Work [an incomplete list of reasons (why Clarke loves Lexa)]>
+    <Work [five times clarke and lexa aren’t sure if they're a couple or not]>
+    <Work [Chemistry]>
+    <Work [The New Commander (Lexa Joining Camp Jaha)]>
+    <Work [Ode to Clarke]>
+    <Work [it's always been (right in front of me)]>
+    <Work [The Girlfriend Tag]>
+    <Work [The After-Heda Chronicles]>
+    <Work [The Counter]>
+    <Work [May We Meet Again]>
+    <Work [No Filter]>
+    <Work [The Games We Play]>
+    <Work [A l'épreuve des balles]>
+    <Work [Celebration]>
+    <Work [Another level of fucked up]>
+    <Work [(Don't Ever Want to Tame) This Wild Heart]>
+    <Work [Self Control]>
+    <Work [Winter]>
+    <Work [My only wish]>
+
 
 You can then use the workid to load one of the works you searched for. To get more then the first 20 works, change the page number using 
 ```python
@@ -201,10 +201,10 @@ session.refresh_auth_token()
 print(session.kudos(AO3.Work(18001499, load=False))
 ```
 
-```
-Bookmarks: 67
-True
-```
+
+    Bookmarks: 67
+    True
+
 
 We successfully left kudos in a work and checked our bookmarks. The `session.refresh_auth_token()` is needed for some activities such as leaving kudos and comments. If it is expired or you forget to call this function, the error `AO3.utils.AuthError: Invalid authentication token. Try calling session.refresh_auth_token()` will be raised.
 
@@ -232,20 +232,20 @@ for comment in comments:
     print(f"Comment ID: {comment.id}\nReplies: {len(comment.get_thread())}")
 ```
 
-```
-Loaded 5 comment threads in 1.8 seconds
 
-Comment ID: 312237184
-Replies: 1
-Comment ID: 312245032
-Replies: 1
-Comment ID: 312257098
-Replies: 1
-Comment ID: 312257860
-Replies: 1
-Comment ID: 312285673
-Replies: 2
-```
+    Loaded 5 comment threads in 1.8 seconds
+
+    Comment ID: 312237184
+    Replies: 1
+    Comment ID: 312245032
+    Replies: 1
+    Comment ID: 312257098
+    Replies: 1
+    Comment ID: 312257860
+    Replies: 1
+    Comment ID: 312285673
+    Replies: 2
+
 
 Loading comments takes a very long time so you should try and use it as little as possible. It also causes lots of requests to be sent to the AO3 servers, which might result in getting the error `utils.HTTPError: We are being rate-limited. Try again in a while or reduce the number of requests`. If it happens, you should try to space out your requests or reduce their number. There is also the option to enable request limiting using `AO3.utils.limit_requests()`, which make it so you can't make more than x requests in a certain time window.
 You can also reply to comments using the `Comment.reply()` function, or delete one (if it's yours) using `Comment.delete()`.
