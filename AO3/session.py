@@ -500,7 +500,23 @@ class Session(GuestSession):
         span = div.find("span", {"class": "current"}).getText().replace("(", "").replace(")", "")
         n = span.split(" ")[1]
         
-        return int(self.str_format(n))    
+        return int(self.str_format(n))
+    
+    def get_statistics(self, year=None):
+        year = "All+Years" if year is None else str(year)
+        url = f"https://archiveofourown.org/users/{self.username}/stats?year={year}"
+        soup = self.request(url) 
+        stats = {}
+        dt = soup.find("dl", {"class": "statistics meta group"})
+        if dt is not None:
+            for field in dt.findAll("dt"):
+                name = field.getText()[:-1].lower().replace(" ", "_")
+                if field.next_sibling is not None and field.next_sibling.next_sibling is not None:
+                    value = field.next_sibling.next_sibling.getText().replace(",", "")
+                    if value.isdigit():
+                        stats[name] = int(value)
+        
+        return stats
 
     @staticmethod
     def str_format(string):
