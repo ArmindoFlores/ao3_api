@@ -1,3 +1,5 @@
+import datetime
+
 from . import utils
 
 
@@ -99,6 +101,12 @@ def get_work_from_banner(work):
         hits = stats.find("dd", {"class": "hits"})
         if hits is not None:
             hits = int(hits.text.replace(",", ""))
+        kudos = stats.find("dd", {"class": "kudos"})
+        if kudos is not None:
+            kudos = int(kudos.text.replace(",", ""))
+        comments = stats.find("dd", {"class": "comments"})
+        if comments is not None:
+            comments = int(comments.text.replace(",", ""))
         restricted = work.find("img", {"title": "Restricted"}) is not None
         if chapters is None:
             complete = None
@@ -107,15 +115,24 @@ def get_work_from_banner(work):
     else:
         language = words = bookmarks = chapters = expected_chapters = hits = restricted = complete = None
 
+    date = work.find("p", {"class": "datetime"})
+    if date is None:
+        date_updated = None
+    else:
+        date_updated = datetime.datetime.strptime(date.getText(), "%d %b %Y")
+
     __setifnotnone(new, "authors", authors)
     __setifnotnone(new, "bookmarks", bookmarks)
     __setifnotnone(new, "categories", categories)
     __setifnotnone(new, "nchapters", chapters)
     __setifnotnone(new, "characters", characters)
     __setifnotnone(new, "complete", complete)
+    __setifnotnone(new, "date_updated", date_updated)
     __setifnotnone(new, "expected_chapters", expected_chapters)
     __setifnotnone(new, "fandoms", fandoms)
     __setifnotnone(new, "hits", hits)
+    __setifnotnone(new, "comments", comments)
+    __setifnotnone(new, "kudos", kudos)
     __setifnotnone(new, "language", language)
     __setifnotnone(new, "rating", rating)
     __setifnotnone(new, "relationships", relationships)
