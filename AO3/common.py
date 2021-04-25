@@ -110,7 +110,7 @@ def get_work_from_banner(work):
     __setifnotnone(new, "authors", authors)
     __setifnotnone(new, "bookmarks", bookmarks)
     __setifnotnone(new, "categories", categories)
-    __setifnotnone(new, "chapters", chapters)
+    __setifnotnone(new, "nchapters", chapters)
     __setifnotnone(new, "characters", characters)
     __setifnotnone(new, "complete", complete)
     __setifnotnone(new, "expected_chapters", expected_chapters)
