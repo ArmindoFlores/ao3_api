@@ -140,10 +140,9 @@ def search(
     """
 
     query = utils.Query()
+    query.add_field(f"work_search[query]={any_field if any_field != '' else ' '}")
     if page != 1:
         query.add_field(f"page={page}")
-    if any_field != "":
-        query.add_field(f"work_search[query]={any_field}")
     if title != "":
         query.add_field(f"work_search[title]={title}")
     if author != "":
