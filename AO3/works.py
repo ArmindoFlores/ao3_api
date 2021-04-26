@@ -195,6 +195,7 @@ class Work:
             "nchapters",
             "characters",
             "complete",
+            "comments",
             "expected_chapters",
             "fandoms",
             "hits",
