@@ -44,6 +44,7 @@ class Search:
         page=1,
         sort_column="",
         sort_direction="",
+        revised_at="",
         session=None):
 
         self.any_field = any_field
@@ -61,6 +62,7 @@ class Search:
         self.page = page
         self.sort_column = sort_column
         self.sort_direction = sort_direction
+        self.revised_at = revised_at
         
         self.session = session
 
@@ -78,7 +80,7 @@ class Search:
             self.any_field, self.title, self.author, self.single_chapter,
             self.word_count, self.language, self.fandoms, self.rating, self.hits,
             self.bookmarks, self.comments, self.completion_status, self.page,
-            self.sort_column, self.sort_direction, self.session)
+            self.sort_column, self.sort_direction, self.revised_at, self.session)
 
         results = soup.find("ol", {"class": ("work", "index", "group")})
         if results is None and soup.find("p", text="No results found. You may want to edit your search to make it less specific.") is not None:
@@ -115,6 +117,7 @@ def search(
     page=1,
     sort_column="",
     sort_direction="",
+    revised_at="",
     session=None):
     """Returns the results page for the search as a Soup object
 
@@ -133,6 +136,7 @@ def search(
         page (int, optional): Page number. Defaults to 1.
         sort_column (str, optional): Which column to sort on. Defaults to "".
         sort_direction (str, optional): Which direction to sort. Defaults to "".
+        revised_at (str, optional): Show works older / more recent than this date. Defaults to "".
         session (AO3.Session, optional): Session object. Defaults to None.
 
     Returns:
@@ -169,6 +173,8 @@ def search(
         query.add_field(f"work_search[sort_column]={sort_column}")
     if sort_direction != "":
         query.add_field(f"work_search[sort_direction]={sort_direction}")
+    if revised_at != "":
+        query.add_field(f"work_search[revised_at]={revised_at}")
 
     url = f"https://archiveofourown.org/works/search?{query.string}"
 
