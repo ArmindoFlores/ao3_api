@@ -208,7 +208,8 @@ class Work:
             "tags",
             "title",
             "warnings",
-            "workid",
+            "id",
+            "words"
         )
         string_fields = (
             "date_edited",
