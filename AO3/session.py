@@ -386,7 +386,7 @@ class Session(GuestSession):
         url = self._history_url.format(self.username, page)
         soup = self.request(url)
         history = soup.find("ol", {"class": "reading work index group"})
-        for item in history.find_all("li", {"class": "reading work blurb group"}):
+        for item in history.find_all("li", {"role": "article"}):
             # authors = []
             workname = None
             workid = None
