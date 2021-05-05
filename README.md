@@ -67,7 +67,7 @@ Things had started out well enough,
 The objects in work.chapters are of type `AO3.Chapter`. They have a lot of the same properties as a `Work` object would.
 
 
-Another thing you can do with the work object is download the entire work as a pdf or e-book.
+Another thing you can do with the work object is download the entire work as a pdf or e-book. At the moment you can download works as AZW3, EPUB, HTML, MOBI, and PDF files.
 
 ```py3
 import AO3
