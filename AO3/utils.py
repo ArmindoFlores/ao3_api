@@ -204,6 +204,33 @@ def workid_from_url(url):
             return int(workid)
     return
 
+def worktitle_from_workid(workid):
+    """Get the work title from an archiveofourown.org work ID
+    Args:
+        workid (int): Work ID
+    Returns:
+        string: Work Title
+    """
+    # Convert ID (int) to string and concatenate with website URL
+    workid = str(workid)
+    url = str("https://archiveofourown.org/works/" + workid)
+
+    # Get page content and parse with BeatifulSoup
+    if requests.get(url).ok == True:
+        soupget = requests.get(url, timeout=5).content
+        soup = BeautifulSoup(soupget, 'html.parser')
+    else:
+        raise HTTPError("Request failure. Try again in a while or reduce the number of requests")
+ 
+    # Get work title HTML class
+    worktitle = soup.find('h2', {'class': 'title heading'})
+
+    # Convert class content to string and strip the whitespace
+    worktitle = worktitle.text
+    worktitle = worktitle.strip()
+
+    return worktitle
+
 def comment(commentable, comment_text, sess, fullwork=False, commentid=None, email="", name=""):
     """Leaves a comment on a specific work
 
