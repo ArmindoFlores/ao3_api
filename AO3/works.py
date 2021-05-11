@@ -459,6 +459,8 @@ class Work:
 
         from .users import User
         authors = self._soup.find_all("h3", {"class": "byline heading"})
+        if len(authors) == 0:
+            return []
         formatted_authors = authors[0].text.replace("\n", "").split(", ")
         author_list = []
         if authors is not None:
@@ -747,7 +749,7 @@ class Work:
         if html is not None:
             rating = html.a.string
             return rating
-        return "Unknown"
+        return None
 
     @cached_property
     def summary(self):
