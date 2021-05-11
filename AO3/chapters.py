@@ -188,7 +188,7 @@ class Chapter:
             tuple: Pairs of image urls and the paragraph number
         """
         
-        div = self._soup.find("div", {"role": "article"})
+        div = self._soup.find("div", {"class": "userstuff"})
         images = []
         line = 0
         for p in div.findAll("p"):
