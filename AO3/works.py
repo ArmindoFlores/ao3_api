@@ -147,6 +147,7 @@ class Work:
 
         Args:
             filetype (str, optional): Desired filetype. Defaults to "PDF".
+            Known filetypes are: AZW3, EPUB, HTML, MOBI, PDF. 
 
         Raises:
             utils.DownloadError: Raised if there was an error with the download
@@ -178,6 +179,7 @@ class Work:
         Args:
             filename (str): Name of the resulting file
             filetype (str, optional): Desired filetype. Defaults to "PDF".
+            Known filetypes are: AZW3, EPUB, HTML, MOBI, PDF.
 
         Raises:
             utils.DownloadError: Raised if there was an error with the download
