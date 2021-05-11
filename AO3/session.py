@@ -471,19 +471,22 @@ class Session(GuestSession):
         bookmarks = soup.find("ol", {"class": "bookmark index group"})
         for bookm in bookmarks.find_all("li", {"class": "bookmark blurb group"}):
             authors = []
-            for a in bookm.h4.find_all("a"):
-                if "rel" in a.attrs.keys():
-                    if "author" in a["rel"]:
-                        authors.append(User(str(a.string), load=False))
-                elif a.attrs["href"].startswith("/works"):
-                    workname = str(a.string)
-                    workid = utils.workid_from_url(a["href"])
+            workid = -1
+            if bookm.h4 is not None:
+                for a in bookm.h4.find_all("a"):
+                    if "rel" in a.attrs.keys():
+                        if "author" in a["rel"]:
+                            authors.append(User(str(a.string), load=False))
+                    elif a.attrs["href"].startswith("/works"):
+                        workname = str(a.string)
+                        workid = utils.workid_from_url(a["href"])
             
-            new = Work(workid, load=False)
-            setattr(new, "title", workname)
-            setattr(new, "authors", authors)
-            if new not in self._bookmarks:
-                self._bookmarks.append(new)
+                if workid != -1:
+                    new = Work(workid, load=False)
+                    setattr(new, "title", workname)
+                    setattr(new, "authors", authors)
+                    if new not in self._bookmarks:
+                        self._bookmarks.append(new)
             
     @cached_property
     def bookmarks(self):
