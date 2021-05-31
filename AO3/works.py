@@ -78,7 +78,7 @@ class Work:
                     delattr(self, attr)
         
         self._soup = self.request(f"https://archiveofourown.org/works/{self.id}?view_adult=true&view_full_work=true")
-        if "Error 404" in self._soup.text:
+        if "Error 404" in self._soup.find("h2", {"class", "heading"}).text:
             raise utils.InvalidIdError("Cannot find work")
         if load_chapters:
             self.load_chapters()
