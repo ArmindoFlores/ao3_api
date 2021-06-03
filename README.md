@@ -2,7 +2,7 @@
 
 # AO3 API
 
-This is an unofficial API that let's you access some of AO3's (archiveofourown.org) data through Python.
+This is an unofficial API that lets you access some of AO3's (archiveofourown.org) data through Python.
 
 ## Installation
 
