@@ -23,7 +23,7 @@ This package is divided in 9 core modules: works, chapters, users, series, searc
 
 ## Works
 
-One of the most basic things you might want to do with this package is loading a work and checking its statistics and informations. To do that, you'll need the `AO3.Work` class.
+One of the most basic things you might want to do with this package is loading a work and checking its statistics and information. To do that, you'll need the `AO3.Work` class.
 
 We start by finding the _workid_ of the work we want to load. We do that either by using `AO3.utils.workid_from_url(url)` or by just looking at the url ourselves. Let's take a look:
 
@@ -167,7 +167,7 @@ University student, opening documents to write essays but writing this stuff ins
 
 ## Search
 
-To search for works, you can either use the `AO3.search()` function and parse the BeautifulSoup object returned yourself, or use the `AO3.Search` class to automatically do that for you
+To search for works, you can either use the `AO3.search()` function and parse the BeautifulSoup object returned yourself, or use the `AO3.Search` class to automatically do that for you.
 
 ```py3
 import AO3
@@ -209,7 +209,7 @@ search.page = 2
 
 ## Session
 
-A lot of actions you might want to take might require an AO3 account, and if you have one, you can get access to those actions using an AO3.Session object. You start by logging in using your username and password, and then you can use that object to access restricted content.
+A lot of actions you might want to take might require an AO3 account. If you already have one, you can access those actions using an AO3.Session object. You start by logging in using your username and password, and then you can use that object to access restricted content.
 
 ```py3
 import AO3
@@ -229,7 +229,7 @@ We successfully left kudos in a work and checked our bookmarks. The `session.ref
 
 You can also comment / leave kudos in a work by calling `Work.leave_kudos()`/`Work.comment()` and provided you have instantiated that object with a session already (`AO3.Work(xxxxxx, session=sess)` or using `Work.set_session()`). This is probably the best way to do so because you will run into less authentication issues (as the work's authenticity token will be used instead).
 
-If you would prefer to leave a comment or kudos anonimously, you can use an `AO3.GuestSession` in the same way you'd use a normal session, except you won't be able to check your bookmarks, subscriptions, etc... because you're not actually logged in.
+If you would prefer to leave a comment or kudos anonymously, you can use an `AO3.GuestSession` in the same way you'd use a normal session, except you won't be able to check your bookmarks, subscriptions, etc. because you're not actually logged in.
 
 
 ## Comments
@@ -266,14 +266,14 @@ Comment ID: 312285673
 Replies: 2
 ```
 
-Loading comments takes a very long time so you should try and use it as little as possible. It also causes lots of requests to be sent to the AO3 servers, which might result in getting the error `utils.HTTPError: We are being rate-limited. Try again in a while or reduce the number of requests`. If it happens, you should try to space out your requests or reduce their number. There is also the option to enable request limiting using `AO3.utils.limit_requests()`, which make it so you can't make more than x requests in a certain time window.
+Loading comments takes a very long time so you should try and use it as little as possible. It also causes lots of requests to be sent to the AO3 servers, which might result in getting the error `utils.HTTPError: We are being rate-limited. Try again in a while or reduce the number of requests`. If that happens, you should try to space out your requests or reduce their number. There is also the option to enable request limiting using `AO3.utils.limit_requests()`, which make it so you can't make more than x requests in a certain time window.
 You can also reply to comments using the `Comment.reply()` function, or delete one (if it's yours) using `Comment.delete()`.
 
 
 ## Extra
 
 AO3.extra contains the the code to download some extra resources that are not core to the functionality of this package and don't change very often. One example would be the list of fandoms recognized by AO3.
-To download a resource, simply use `AO3.extra.download(resource_name)`. To download every resource, you can use `AO3.extra.download_all()`. To see the list of available resources, `AO3.extra.get_resources()` will help you.
+To download a resource, simply use `AO3.extra.download(resource_name)`. To download every resource, you can use `AO3.extra.download_all()`. To see the list of available resources, use `AO3.extra.get_resources()`.
 
 
 # Contact info
