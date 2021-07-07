@@ -194,7 +194,8 @@ class Chapter:
         for p in div.findAll("p"):
             line += 1
             for img in p.findAll("img"):
-                images.append((img.attrs["src"], line))
+                if "src" in img.attrs:
+                    images.append((img.attrs["src"], line))
         return tuple(images)
         
     @property
