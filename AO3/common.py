@@ -84,29 +84,39 @@ def get_work_from_banner(work):
             language = language.text
         words = stats.find("dd", {"class": "words"})
         if words is not None:
-            words = int(words.text.replace(",", ""))
+            words = words.text.replace(",", "")
+            if words.isdigit(): words = int(words)
+            else: words = None
         bookmarks = stats.find("dd", {"class": "bookmarks"})
         if bookmarks is not None:
-            bookmarks = int(bookmarks.text.replace(",", ""))
+            bookmarks = bookmarks.text.replace(",", "")
+            if bookmarks.isdigit(): bookmarks = int(bookmarks)
+            else: bookmarks = None
         chapters = stats.find("dd", {"class": "chapters"})
         if chapters is not None:
-            chapters = int(chapters.text.split('/')[0].replace(",", ""))
+            chapters = chapters.text.split('/')[0].replace(",", "")
+            if chapters.isdigit(): chapters = int(chapters)
+            else: chapters = None
         expected_chapters = stats.find("dd", {"class": "chapters"})
         if expected_chapters is not None:
             expected_chapters = expected_chapters.text.split('/')[-1].replace(",", "")
-            if expected_chapters.isdigit():
-                expected_chapters = int(expected_chapters)
-            else:
-                expected_chapters = None
+            if expected_chapters.isdigit(): expected_chapters = int(expected_chapters)
+            else: expected_chapters = None
         hits = stats.find("dd", {"class": "hits"})
         if hits is not None:
-            hits = int(hits.text.replace(",", ""))
+            hits = hits.text.replace(",", "")
+            if hits.isdigit(): hits = int(hits)
+            else: hits = None
         kudos = stats.find("dd", {"class": "kudos"})
         if kudos is not None:
-            kudos = int(kudos.text.replace(",", ""))
+            kudos = kudos.text.replace(",", "")
+            if kudos.isdigit(): kudos = int(kudos)
+            else: kudos = None
         comments = stats.find("dd", {"class": "comments"})
         if comments is not None:
-            comments = int(comments.text.replace(",", ""))
+            comments = comments.text.replace(",", "")
+            if comments.isdigit(): comments = int(comments)
+            else: comments = None
         restricted = work.find("img", {"title": "Restricted"}) is not None
         if chapters is None:
             complete = None
