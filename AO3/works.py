@@ -423,6 +423,31 @@ class Work:
             
         return utils.comment(self, comment_text, self._session, True, email=email, name=name)
     
+    @threadable.threadable
+    def bookmark(self, notes="", tags=None, collections=None, private=False, recommend=False):
+        """Bookmarks this work
+        This function is threadable
+
+        Args:
+            notes (str, optional): Bookmark notes. Defaults to "".
+            tags (list, optional): What tags to add. Defaults to None.
+            collections (list, optional): What collections to add this bookmark to. Defaults to None.
+            private (bool, optional): Whether this bookmark should be private. Defaults to False.
+            recommend (bool, optional): Whether to recommend this bookmark. Defaults to False.
+
+        Raises:
+            utils.UnloadedError: Work isn't loaded
+            utils.AuthError: Invalid session
+        """
+        
+        if not self.loaded:
+            raise utils.UnloadedError("Work isn't loaded. Have you tried calling Work.reload()?")
+        
+        if self._session is None:
+            raise utils.AuthError("Invalid session")
+        
+        utils.bookmark(self, self._session, notes, tags, collections, private, recommend)
+    
     @property
     def loaded(self):
         """Returns True if this work has been loaded"""
