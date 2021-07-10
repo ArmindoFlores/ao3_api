@@ -447,6 +447,41 @@ class Work:
             raise utils.AuthError("Invalid session")
         
         utils.bookmark(self, self._session, notes, tags, collections, private, recommend)
+        
+    @threadable.threadable
+    def delete_bookmark(self):
+        """Removes a bookmark from this work
+        This function is threadable
+
+        Raises:
+            utils.UnloadedError: Work isn't loaded
+            utils.AuthError: Invalid session
+        """
+        
+        if not self.loaded:
+            raise utils.UnloadedError("Work isn't loaded. Have you tried calling Work.reload()?")
+        
+        if self._session is None:
+            raise utils.AuthError("Invalid session")
+        
+        if self._bookmarkid is None:
+            raise utils.BookmarkError("You don't have a bookmark here")
+        
+        utils.delete_bookmark(self._bookmarkid, self._session, self.authenticity_token)
+        
+    @cached_property
+    def _bookmarkid(self):
+        form_div = self._soup.find("div", {"id": "bookmark-form"})
+        if form_div is None: 
+            return None
+        if form_div.form is None:
+            return None
+        if "action" in form_div.form.attrs and form_div.form["action"].startswith("/bookmarks"):
+            text = form_div.form["action"].split("/")[-1]
+            if text.isdigit():
+                return int(text)
+            return None
+        return None
     
     @property
     def loaded(self):
