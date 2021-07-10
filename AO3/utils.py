@@ -403,6 +403,7 @@ def subscribe(subscribable, worktype, session, unsubscribe=False, subid=None):
         InvalidIdError: Invalid subid
     """
     
+    if session is None: session = subscribable.session
     if session is None or not session.is_authed:
         raise AuthError("Invalid session")
     
@@ -445,6 +446,7 @@ def bookmark(bookmarkable, session=None, notes="", tags=None, collections=None, 
         recommend (bool, optional): Whether to recommend this bookmark. Defaults to False.
     """
     
+    if session is None: session = bookmarkable.session
     if session == None or not session.is_authed:
         raise AuthError("Invalid session")
     
@@ -463,13 +465,14 @@ def bookmark(bookmarkable, session=None, notes="", tags=None, collections=None, 
     data = {
         "authenticity_token": at,
         "bookmark[pseud_id]": pseud_id,
-        "bookmark[bookmarker_notes]": notes,
         "bookmark[tag_string]": ",".join(tags), 
         "bookmark[collection_names]": ",".join(collections),
         "bookmark[private]": int(private),
         "bookmark[rec]" : int(recommend),
         "commit": "Create"
     } 
+    
+    if notes != "": data["bookmark[bookmarker_notes]"] = notes
     
     url = url_join(bookmarkable.url, "bookmarks")
     req = session.session.post(url, data=data, allow_redirects=False)
