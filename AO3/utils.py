@@ -476,12 +476,35 @@ def bookmark(bookmarkable, session=None, notes="", tags=None, collections=None, 
     
     url = url_join(bookmarkable.url, "bookmarks")
     req = session.session.post(url, data=data, allow_redirects=False)
-    if req.status_code == 302:
-        if req.headers["Location"] == AO3_AUTH_ERROR_URL:
+    handle_bookmark_errors(req)
+    
+def delete_bookmark(bookmarkid, session, auth_token=None):
+    """Remove a bookmark from the work/series
+
+    Args:
+        bookmarkid (Work/Series): AO3 object
+        session (AO3.Session): Session object
+        auth_token (str, optional): Authenticity token. Defaults to None.
+    """
+    if session == None or not session.is_authed:
+        raise AuthError("Invalid session")
+    
+    data = {
+        "authenticity_token": session.authenticity_token if auth_token is None else auth_token,
+        "_method": "delete"
+    }
+    
+    url = f"https://archiveofourown.org/bookmarks/{bookmarkid}"
+    req = session.session.post(url, data=data, allow_redirects=False)
+    handle_bookmark_errors(req)
+    
+def handle_bookmark_errors(request):
+    if request.status_code == 302:
+        if request.headers["Location"] == AO3_AUTH_ERROR_URL:
             raise AuthError("Invalid authentication token. Try calling session.refresh_auth_token()")
     else:
-        if req.status_code == 200:
-            soup = BeautifulSoup(req.content, "lxml")
+        if request.status_code == 200:
+            soup = BeautifulSoup(request.content, "lxml")
             error_div = soup.find("div", {"id": "error", "class": "error"})
             if error_div is None:
                 raise UnexpectedResponseError("An unknown error occurred")
@@ -491,7 +514,7 @@ def bookmark(bookmarkable, session=None, notes="", tags=None, collections=None, 
                 raise BookmarkError("An unkown error occurred")
             raise BookmarkError("Error(s) creating bookmark:" + " ".join(errors))
 
-        raise UnexpectedResponseError(f"Unexpected HTTP status code received ({req.status_code})")
+        raise UnexpectedResponseError(f"Unexpected HTTP status code received ({request.status_code})")
 
 def get_pseud_id(ao3object, session=None):
     if session is None: session = ao3object.session
