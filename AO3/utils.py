@@ -432,17 +432,17 @@ def subscribe(subscribable, worktype, session, unsubscribe=False, subid=None):
     else:
         raise InvalidIdError(f"Invalid ID / worktype")
 
-def bookmark(bookmarkable, session=None, notes="", tags=None, collections=None, private=False, recomend=False):
-    """[summary]
+def bookmark(bookmarkable, session=None, notes="", tags=None, collections=None, private=False, recommend=False):
+    """Adds a bookmark to a work/series. Be careful, you can bookmark a work multiple times
 
     Args:
-        bookmarkable ([type]): [description]
-        session ([type]): [description]
-        notes (str, optional): [description]. Defaults to "".
-        tags ([type], optional): [description]. Defaults to None.
-        collections (list, optional): [description]. Defaults to [].
-        private (bool, optional): [description]. Defaults to False.
-        recomend (bool, optional): [description]. Defaults to False.
+        bookmarkable (Work/Series): AO3 object
+        session (AO3.Session): Session object
+        notes (str, optional): Bookmark notes. Defaults to "".
+        tags (list, optional): What tags to add. Defaults to None.
+        collections (list, optional): What collections to add this bookmark to. Defaults to None.
+        private (bool, optional): Whether this bookmark should be private. Defaults to False.
+        recommend (bool, optional): Whether to recommend this bookmark. Defaults to False.
     """
     
     if session == None or not session.is_authed:
@@ -467,7 +467,7 @@ def bookmark(bookmarkable, session=None, notes="", tags=None, collections=None, 
         "bookmark[tag_string]": ",".join(tags), 
         "bookmark[collection_names]": ",".join(collections),
         "bookmark[private]": int(private),
-        "bookmark[rec]" : int(recomend),
+        "bookmark[rec]" : int(recommend),
         "commit": "Create"
     } 
     
