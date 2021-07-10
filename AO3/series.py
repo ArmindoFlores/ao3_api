@@ -110,6 +110,16 @@ class Series:
         
         utils.subscribe(self, "Series", self._session, True, self._sub_id)
         
+    @cached_property
+    def url(self):
+        """Returns the URL to this series
+
+        Returns:
+            str: series URL
+        """    
+
+        return f"https://archiveofourown.org/series/{self.id}"
+        
     @property
     def loaded(self):
         """Returns True if this series has been loaded"""

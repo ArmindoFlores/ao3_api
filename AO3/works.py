@@ -799,7 +799,7 @@ class Work:
             str: work URL
         """    
 
-        return "https://archiveofourown.org/works/%i"%self.id
+        return f"https://archiveofourown.org/works/{self.id}"
 
     @cached_property
     def complete(self):
