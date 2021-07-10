@@ -2,13 +2,16 @@ import os
 import pickle
 import re
 
-import requests
 from bs4 import BeautifulSoup
 
 from .requester import requester
+from .common import url_join
 
 _FANDOMS = None
 _LANGUAGES = None
+
+AO3_AUTH_ERROR_URL = "https://archiveofourown.org/auth_error"
+
 
 class LoginError(Exception):
     def __init__(self, message, errors=[]):
@@ -51,6 +54,11 @@ class PseudError(Exception):
         self.errors = errors
         
 class HTTPError(Exception):
+    def __init__(self, message, errors=[]):
+        super().__init__(message)
+        self.errors = errors
+        
+class BookmarkError(Exception):
     def __init__(self, message, errors=[]):
         super().__init__(message)
         self.errors = errors
@@ -204,14 +212,14 @@ def workid_from_url(url):
             return int(workid)
     return
 
-def comment(commentable, comment_text, sess, fullwork=False, commentid=None, email="", name=""):
+def comment(commentable, comment_text, session, fullwork=False, commentid=None, email="", name=""):
     """Leaves a comment on a specific work
 
     Args:
         commentable (Work/Chapter): Chapter/Work object
         comment_text (str): Comment text (must have between 1 and 10000 characters)
         fullwork (bool): Should be True if the work has only one chapter or if the comment is to be posted on the full work.
-        sess (AO3.Session/AO3.GuestSession): Session object to request with.
+        session (AO3.Session/AO3.GuestSession): Session object to request with.
         commentid (str/int): If specified, the comment is posted as a reply to this comment. Defaults to None.
         email (str): Email to post with. Only used if sess is None. Defaults to "".
         name (str): Name that will appear on the comment. Only used if sess is None. Defaults to "".
@@ -230,7 +238,7 @@ def comment(commentable, comment_text, sess, fullwork=False, commentid=None, ema
     if commentable.authenticity_token is not None:
         at = commentable.authenticity_token
     else:
-        at = sess.authenticity_token
+        at = session.authenticity_token
     headers = {
         "x-requested-with": "XMLHttpRequest",
         "x-newrelic-id": "VQcCWV9RGwIJVFFRAw==",
@@ -245,26 +253,13 @@ def comment(commentable, comment_text, sess, fullwork=False, commentid=None, ema
     if commentid is not None:
         data["comment_id"] = commentid
         
-    if sess.is_authed:
+    if session.is_authed:
         if fullwork:
             referer = f"https://archiveofourown.org/works/{commentable.id}"
         else:
             referer = f"https://archiveofourown.org/chapters/{commentable.id}"
             
-        soup = sess.request(referer)   
-        pseud = soup.find("input", {"name": "comment[pseud_id]"})
-        if pseud is None:
-            pseud = soup.find("select", {"name": "comment[pseud_id]"})
-            if pseud is None:
-                raise PseudError("Couldn't find your pseud's id")
-            pseud_id = None
-            for option in pseud.findAll("option"):
-                if "selected" in option.attrs and option.attrs["selected"] == "selected":
-                    pseud_id = option.attrs["value"]
-                    break
-        else:
-            pseud_id = pseud.attrs["value"]
-            
+        pseud_id = get_pseud_id(commentable, session)
         if pseud_id is None:
             raise PseudError("Couldn't find your pseud's id")
             
@@ -285,7 +280,7 @@ def comment(commentable, comment_text, sess, fullwork=False, commentid=None, ema
             "comment[comment_content]": comment_text,
         })
 
-    response = sess.post(f"https://archiveofourown.org/comments.js", headers=headers, data=data)
+    response = session.post(f"https://archiveofourown.org/comments.js", headers=headers, data=data)
     if response.status_code == 429:
         raise HTTPError("We are being rate-limited. Try again in a while or reduce the number of requests")
     if response.status_code == 404:
@@ -299,7 +294,7 @@ def comment(commentable, comment_text, sess, fullwork=False, commentid=None, ema
         if "errors" in json:
             if "auth_error" in json["errors"]:
                 raise AuthError("Invalid authentication token. Try calling session.refresh_auth_token()")
-        raise UnexpectedResponseError(f"Unexpected json received:\n"+str(json))
+        raise UnexpectedResponseError(f"Unexpected json received:\n{str(json)}")
     elif response.status_code == 200:
         raise DuplicateCommentError("You have already left this comment here")
 
@@ -432,7 +427,85 @@ def subscribe(subscribable, worktype, session, unsubscribe=False, subid=None):
     if unsubscribe:
         return req
     if req.status_code == 302:
-        if req.headers["Location"] == "https://archiveofourown.org/auth_error":
+        if req.headers["Location"] == AO3_AUTH_ERROR_URL:
             raise AuthError("Invalid authentication token. Try calling session.refresh_auth_token()")
     else:
         raise InvalidIdError(f"Invalid ID / worktype")
+
+def bookmark(bookmarkable, session=None, notes="", tags=None, collections=None, private=False, recomend=False):
+    """[summary]
+
+    Args:
+        bookmarkable ([type]): [description]
+        session ([type]): [description]
+        notes (str, optional): [description]. Defaults to "".
+        tags ([type], optional): [description]. Defaults to None.
+        collections (list, optional): [description]. Defaults to [].
+        private (bool, optional): [description]. Defaults to False.
+        recomend (bool, optional): [description]. Defaults to False.
+    """
+    
+    if session == None or not session.is_authed:
+        raise AuthError("Invalid session")
+    
+    if bookmarkable.authenticity_token is not None:
+        at = bookmarkable.authenticity_token
+    else:
+        at = session.authenticity_token
+    
+    if tags is None: tags = []
+    if collections is None: collections = []   
+       
+    pseud_id = get_pseud_id(bookmarkable, session)
+    if pseud_id is None:
+        raise PseudError("Couldn't find your pseud's id") 
+    
+    data = {
+        "authenticity_token": at,
+        "bookmark[pseud_id]": pseud_id,
+        "bookmark[bookmarker_notes]": notes,
+        "bookmark[tag_string]": ",".join(tags), 
+        "bookmark[collection_names]": ",".join(collections),
+        "bookmark[private]": int(private),
+        "bookmark[rec]" : int(recomend),
+        "commit": "Create"
+    } 
+    
+    url = url_join(bookmarkable.url, "bookmarks")
+    req = session.session.post(url, data=data, allow_redirects=False)
+    if req.status_code == 302:
+        if req.headers["Location"] == AO3_AUTH_ERROR_URL:
+            raise AuthError("Invalid authentication token. Try calling session.refresh_auth_token()")
+    else:
+        if req.status_code == 200:
+            soup = BeautifulSoup(req.content, "lxml")
+            error_div = soup.find("div", {"id": "error", "class": "error"})
+            if error_div is None:
+                raise UnexpectedResponseError("An unknown error occurred")
+            
+            errors = [item.getText() for item in error_div.findAll("li")]
+            if len(errors) == 0:
+                raise BookmarkError("An unkown error occurred")
+            raise BookmarkError("Error(s) creating bookmark:" + " ".join(errors))
+
+        raise UnexpectedResponseError(f"Unexpected HTTP status code received ({req.status_code})")
+
+def get_pseud_id(ao3object, session=None):
+    if session is None: session = ao3object.session
+    if session is None or not session.is_authed:
+        raise AuthError("Invalid session")
+    
+    soup = session.request(ao3object.url)   
+    pseud = soup.find("input", {"name": re.compile(".+\\[pseud_id\\]")})
+    if pseud is None:
+        pseud = soup.find("select", {"name": re.compile(".+\\[pseud_id\\]")})
+        if pseud is None:
+            return None
+        pseud_id = None
+        for option in pseud.findAll("option"):
+            if "selected" in option.attrs and option.attrs["selected"] == "selected":
+                pseud_id = option.attrs["value"]
+                break
+    else:
+        pseud_id = pseud.attrs["value"]
+    return pseud_id
