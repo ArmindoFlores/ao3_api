@@ -325,6 +325,7 @@ class Series:
         dl = self._soup.find("dl", {"class": "series meta group"})
         stats = dl.find("dl", {"class": "stats"}).findAll(("dd", "dt"))
         last_dt = None
+        book = "0"
         for field in stats:
             if field.name == "dt":
                 last_dt = field.getText().strip()
