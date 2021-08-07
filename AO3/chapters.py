@@ -86,7 +86,7 @@ class Chapter:
                 self._soup = chapter._soup
         
     @threadable.threadable
-    def comment(self, comment_text, email="", name=""):
+    def comment(self, comment_text, email="", name="", pseud=None):
         """Leaves a comment on this chapter.
         This function is threadable.
 
@@ -102,7 +102,7 @@ class Chapter:
         """
         
         if self.id is None:
-            return self._work.comment(comment_text, email, name)
+            return self._work.comment(comment_text, email, name, pseud)
         
         if not self.loaded:
             raise utils.UnloadedError("Chapter isn't loaded. Have you tried calling Chapter.reload()?")
@@ -111,7 +111,7 @@ class Chapter:
             raise utils.AuthError("Invalid session")
             
         if self.id is not None:
-            return utils.comment(self, comment_text, self._session, False, email=email, name=name)
+            return utils.comment(self, comment_text, self._session, False, email=email, name=name, pseud=pseud)
     
     def get_comments(self, maximum=None):
         """Returns a list of all threads of comments in the chapter. This operation can take a very long time.
@@ -285,6 +285,16 @@ class Chapter:
             text += p.getText() + "\n"
         return text
     
+    @cached_property
+    def url(self):
+        """Returns the URL to this chapter
+
+        Returns:
+            str: chapter URL
+        """
+
+        return f"https://archiveofourown.org/works/{self._work.id}/chapters/{self.id}"
+
     def request(self, url):
         """Request a web page and return a BeautifulSoup object.
 
