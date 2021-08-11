@@ -400,12 +400,15 @@ class Work:
         return utils.kudos(self, self._session)
     
     @threadable.threadable
-    def comment(self, comment_text, email="", name=""):
+    def comment(self, comment_text, email="", name="", pseud=None):
         """Leaves a comment on this work.
         This function is threadable.
 
         Args:
             comment_text (str): Comment text
+            email (str, optional): Email to add comment. Needed if not logged in.
+            name (str, optional): Name to add comment under. Needed if not logged in.
+            pseud (str, optional): Pseud to add the comment under. Defaults to default pseud.
 
         Raises:
             utils.UnloadedError: Couldn't load chapters
@@ -421,10 +424,10 @@ class Work:
         if self._session is None:
             raise utils.AuthError("Invalid session")
             
-        return utils.comment(self, comment_text, self._session, True, email=email, name=name)
+        return utils.comment(self, comment_text, self._session, True, email=email, name=name, pseud=pseud)
     
     @threadable.threadable
-    def bookmark(self, notes="", tags=None, collections=None, private=False, recommend=False):
+    def bookmark(self, notes="", tags=None, collections=None, private=False, recommend=False, pseud=None):
         """Bookmarks this work
         This function is threadable
 
@@ -434,6 +437,7 @@ class Work:
             collections (list, optional): What collections to add this bookmark to. Defaults to None.
             private (bool, optional): Whether this bookmark should be private. Defaults to False.
             recommend (bool, optional): Whether to recommend this bookmark. Defaults to False.
+            pseud (str, optional): What pseud to add the bookmark under. Defaults to default pseud.
 
         Raises:
             utils.UnloadedError: Work isn't loaded
@@ -446,7 +450,7 @@ class Work:
         if self._session is None:
             raise utils.AuthError("Invalid session")
         
-        utils.bookmark(self, self._session, notes, tags, collections, private, recommend)
+        utils.bookmark(self, self._session, notes, tags, collections, private, recommend, pseud)
         
     @threadable.threadable
     def delete_bookmark(self):

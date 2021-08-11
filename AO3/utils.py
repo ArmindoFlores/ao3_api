@@ -212,7 +212,7 @@ def workid_from_url(url):
             return int(workid)
     return
 
-def comment(commentable, comment_text, session, fullwork=False, commentid=None, email="", name=""):
+def comment(commentable, comment_text, session, fullwork=False, commentid=None, email="", name="", pseud=None):
     """Leaves a comment on a specific work
 
     Args:
@@ -223,11 +223,12 @@ def comment(commentable, comment_text, session, fullwork=False, commentid=None, 
         commentid (str/int): If specified, the comment is posted as a reply to this comment. Defaults to None.
         email (str): Email to post with. Only used if sess is None. Defaults to "".
         name (str): Name that will appear on the comment. Only used if sess is None. Defaults to "".
+        pseud (str, optional): What pseud to add the comment under. Defaults to default pseud.
 
     Raises:
         utils.InvalidIdError: Invalid ID
         utils.UnexpectedResponseError: Unknown error
-        utils.PseudoError: Couldn't find a valid pseudonym to post under
+        utils.PseudError: Couldn't find a valid pseudonym to post under
         utils.DuplicateCommentError: The comment you're trying to post was already posted
         ValueError: Invalid name/email
 
@@ -259,7 +260,7 @@ def comment(commentable, comment_text, session, fullwork=False, commentid=None, 
         else:
             referer = f"https://archiveofourown.org/chapters/{commentable.id}"
             
-        pseud_id = get_pseud_id(commentable, session)
+        pseud_id = get_pseud_id(commentable, session, pseud)
         if pseud_id is None:
             raise PseudError("Couldn't find your pseud's id")
             
@@ -433,7 +434,7 @@ def subscribe(subscribable, worktype, session, unsubscribe=False, subid=None):
     else:
         raise InvalidIdError(f"Invalid ID / worktype")
 
-def bookmark(bookmarkable, session=None, notes="", tags=None, collections=None, private=False, recommend=False):
+def bookmark(bookmarkable, session=None, notes="", tags=None, collections=None, private=False, recommend=False, pseud=None):
     """Adds a bookmark to a work/series. Be careful, you can bookmark a work multiple times
 
     Args:
@@ -444,6 +445,7 @@ def bookmark(bookmarkable, session=None, notes="", tags=None, collections=None, 
         collections (list, optional): What collections to add this bookmark to. Defaults to None.
         private (bool, optional): Whether this bookmark should be private. Defaults to False.
         recommend (bool, optional): Whether to recommend this bookmark. Defaults to False.
+        pseud (str, optional): What pseud to add the bookmark under. Defaults to default pseud.
     """
     
     if session is None: session = bookmarkable.session
@@ -458,7 +460,7 @@ def bookmark(bookmarkable, session=None, notes="", tags=None, collections=None, 
     if tags is None: tags = []
     if collections is None: collections = []   
        
-    pseud_id = get_pseud_id(bookmarkable, session)
+    pseud_id = get_pseud_id(bookmarkable, session, pseud)
     if pseud_id is None:
         raise PseudError("Couldn't find your pseud's id") 
     
@@ -511,13 +513,14 @@ def handle_bookmark_errors(request):
             
             errors = [item.getText() for item in error_div.findAll("li")]
             if len(errors) == 0:
-                raise BookmarkError("An unkown error occurred")
+                raise BookmarkError("An unknown error occurred")
             raise BookmarkError("Error(s) creating bookmark:" + " ".join(errors))
 
         raise UnexpectedResponseError(f"Unexpected HTTP status code received ({request.status_code})")
 
-def get_pseud_id(ao3object, session=None):
-    if session is None: session = ao3object.session
+def get_pseud_id(ao3object, session=None, specified_pseud=None):
+    if session is None:
+        session = ao3object.session
     if session is None or not session.is_authed:
         raise AuthError("Invalid session")
     
@@ -528,10 +531,16 @@ def get_pseud_id(ao3object, session=None):
         if pseud is None:
             return None
         pseud_id = None
-        for option in pseud.findAll("option"):
-            if "selected" in option.attrs and option.attrs["selected"] == "selected":
-                pseud_id = option.attrs["value"]
-                break
+        if specified_pseud:
+            for option in pseud.findAll("option"):
+                if option.string == specified_pseud:
+                    pseud_id = option.attrs["value"]
+                    break
+        else:
+            for option in pseud.findAll("option"):
+                if "selected" in option.attrs and option.attrs["selected"] == "selected":
+                    pseud_id = option.attrs["value"]
+                    break
     else:
         pseud_id = pseud.attrs["value"]
     return pseud_id

@@ -111,7 +111,7 @@ class Series:
         utils.subscribe(self, "Series", self._session, True, self._sub_id)
         
     @threadable.threadable
-    def bookmark(self, notes="", tags=None, collections=None, private=False, recommend=False):
+    def bookmark(self, notes="", tags=None, collections=None, private=False, recommend=False, pseud=None):
         """Bookmarks this series
         This function is threadable
 
@@ -121,6 +121,7 @@ class Series:
             collections (list, optional): What collections to add this bookmark to. Defaults to None.
             private (bool, optional): Whether this bookmark should be private. Defaults to False.
             recommend (bool, optional): Whether to recommend this bookmark. Defaults to False.
+            pseud (str, optional): What pseud to add the bookmark under. Defaults to default pseud.
 
         Raises:
             utils.UnloadedError: Series isn't loaded
@@ -133,7 +134,7 @@ class Series:
         if self._session is None:
             raise utils.AuthError("Invalid session")
         
-        utils.bookmark(self, self._session, notes, tags, collections, private, recommend)
+        utils.bookmark(self, self._session, notes, tags, collections, private, recommend, pseud)
         
     @threadable.threadable
     def delete_bookmark(self):
