@@ -81,7 +81,7 @@ class Chapter:
         else:
             self.work.reload()
             
-        for chapter in self.work.chapters:
+        for chapter in self.work._chapters:
             if chapter == self:
                 self._soup = chapter._soup
         
