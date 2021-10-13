@@ -2,6 +2,9 @@ import setuptools
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
+    
+with open("requirements.txt", "r") as fh:
+    requires = [line for line in fh.read().splitlines() if line != ""]
 
 setuptools.setup(
     name="ao3-api",
@@ -10,11 +13,7 @@ setuptools.setup(
     author_email="francisco.rodrigues0908@gmail.com",
     description="An unofficial AO3 (archiveofourown.org) API",
     python_requires='>=3.8',
-    install_requires=[
-        "BeautifulSoup4",
-        "requests",
-        "lxml"
-    ],
+    install_requires=requires,
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/ArmindoFlores/ao3_api",
