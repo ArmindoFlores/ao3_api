@@ -94,7 +94,9 @@ class Search:
             if work.h4 is None:
                 continue
             
-            works.append(get_work_from_banner(work))
+            new = get_work_from_banner(work)
+            new._session = self.session
+            works.append(new)
 
         self.results = works
         maindiv = soup.find("div", {"class": "works-search region", "id": "main"})
