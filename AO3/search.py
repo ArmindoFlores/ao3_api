@@ -111,6 +111,7 @@ def search(
     fandoms="",
     rating=None,
     hits=None,
+    kudos=None,
     bookmarks=None,
     comments=None,
     completion_status=None,
@@ -131,6 +132,7 @@ def search(
         fandoms (str, optional): Fandoms included in the work. Defaults to "".
         rating (int, optional): Rating for the work. 9 for Not Rated, 10 for General Audiences, 11 for Teen And Up Audiences, 12 for Mature, 13 for Explicit. Defaults to None.
         hits (AO3.utils.Constraint, optional): Number of hits. Defaults to None.
+        kudos (AO3.utils.Constraint, optional): Number of kudos. Defaults to None.
         bookmarks (AO3.utils.Constraint, optional): Number of bookmarks. Defaults to None.
         comments (AO3.utils.Constraint, optional): Number of comments. Defaults to None.
         page (int, optional): Page number. Defaults to 1.
@@ -162,7 +164,9 @@ def search(
     if rating is not None:
         query.add_field(f"work_search[rating_ids]={rating}")
     if hits is not None:
-        query.add_field(f"work_search[hits_count]={hits}")
+        query.add_field(f"work_search[hits]={hits}")
+    if kudos is not None:
+        query.add_field(f"work_search[kudos_count]={kudos}")
     if bookmarks is not None:
         query.add_field(f"work_search[bookmarks_count]={bookmarks}")
     if comments is not None:
