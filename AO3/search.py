@@ -38,6 +38,7 @@ class Search:
         fandoms="",
         rating=None,
         hits=None,
+        kudos=None,
         bookmarks=None,
         comments=None,
         completion_status=None,
@@ -56,6 +57,7 @@ class Search:
         self.fandoms = fandoms
         self.rating = rating
         self.hits = hits
+        self.kudos = kudos
         self.bookmarks = bookmarks
         self.comments = comments
         self.completion_status = completion_status
@@ -79,7 +81,7 @@ class Search:
         soup = search(
             self.any_field, self.title, self.author, self.single_chapter,
             self.word_count, self.language, self.fandoms, self.rating, self.hits,
-            self.bookmarks, self.comments, self.completion_status, self.page,
+            self.kudos, self.bookmarks, self.comments, self.completion_status, self.page,
             self.sort_column, self.sort_direction, self.revised_at, self.session)
 
         results = soup.find("ol", {"class": ("work", "index", "group")})
