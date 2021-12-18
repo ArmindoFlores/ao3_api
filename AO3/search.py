@@ -46,10 +46,10 @@ class Search:
         sort_column="",
         sort_direction="",
         revised_at="",
-        session=None,
         characters="",
         relationships="",
-        tags=""):
+        tags="",
+        session=None):
 
         self.any_field = any_field
         self.title = title
