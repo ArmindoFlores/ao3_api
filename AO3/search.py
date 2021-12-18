@@ -46,6 +46,9 @@ class Search:
         sort_column="",
         sort_direction="",
         revised_at="",
+        characters="",
+        relationships="",
+        tags="",
         session=None):
 
         self.any_field = any_field
@@ -55,6 +58,9 @@ class Search:
         self.word_count = word_count
         self.language = language
         self.fandoms = fandoms
+        self.characters = characters
+        self.relationships = relationships
+        self.tags = tags
         self.rating = rating
         self.hits = hits
         self.kudos = kudos
@@ -82,7 +88,8 @@ class Search:
             self.any_field, self.title, self.author, self.single_chapter,
             self.word_count, self.language, self.fandoms, self.rating, self.hits,
             self.kudos, self.bookmarks, self.comments, self.completion_status, self.page,
-            self.sort_column, self.sort_direction, self.revised_at, self.session)
+            self.sort_column, self.sort_direction, self.revised_at, self.session,
+            self.characters, self.relationships, self.tags)
 
         results = soup.find("ol", {"class": ("work", "index", "group")})
         if results is None and soup.find("p", text="No results found. You may want to edit your search to make it less specific.") is not None:
@@ -123,7 +130,10 @@ def search(
     sort_column="",
     sort_direction="",
     revised_at="",
-    session=None):
+    session=None,
+    characters="",
+    relationships="",
+    tags=""):
     """Returns the results page for the search as a Soup object
 
     Args:
@@ -134,6 +144,9 @@ def search(
         word_count (AO3.utils.Constraint, optional): Word count. Defaults to None.
         language (str, optional): Work language. Defaults to "".
         fandoms (str, optional): Fandoms included in the work. Defaults to "".
+        characters (str, optional): Characters included in the work. Defaults to "".
+        relationships (str, optional): Relationships included in the work. Defaults to "".
+        tags (str, optional): Additional tags applied to the work. Defaults to "".
         rating (int, optional): Rating for the work. 9 for Not Rated, 10 for General Audiences, 11 for Teen And Up Audiences, 12 for Mature, 13 for Explicit. Defaults to None.
         hits (AO3.utils.Constraint, optional): Number of hits. Defaults to None.
         kudos (AO3.utils.Constraint, optional): Number of kudos. Defaults to None.
@@ -165,6 +178,12 @@ def search(
         query.add_field(f"work_search[language_id]={language}")
     if fandoms != "":
         query.add_field(f"work_search[fandom_names]={fandoms}")
+    if characters != "":
+        query.add_field(f"work_search[character_names]={characters}")
+    if relationships != "":
+        query.add_field(f"work_search[relationship_names]={relationships}")
+    if tags != "":
+        query.add_field(f"work_search[freeform_names]={tags}")
     if rating is not None:
         query.add_field(f"work_search[rating_ids]={rating}")
     if hits is not None:
