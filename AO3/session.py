@@ -557,7 +557,7 @@ class Session(GuestSession):
                     for work in worksRaw:
                         try:
                             workId = int(work.h4.a.get("href").split("/")[2])
-                            works.append(Work(workId, load=False))
+                            works.append(Work(workId, session=self, load=False))
                         except AttributeError:
                             pass
                     grabbed = True
