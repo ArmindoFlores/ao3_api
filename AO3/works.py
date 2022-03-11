@@ -472,6 +472,27 @@ class Work:
             raise utils.BookmarkError("You don't have a bookmark here")
         
         utils.delete_bookmark(self._bookmarkid, self._session, self.authenticity_token)
+    
+    @threadable.threadable
+    def collect(self, collections):
+        """Invites/collects this work to a collection or collections
+        This function is threadable
+
+        Args:
+            collections (list): What collections to add this work to. Defaults to None.
+
+        Raises:
+            utils.UnloadedError: Work isn't loaded
+            utils.AuthError: Invalid session
+        """
+        
+        if not self.loaded:
+            raise utils.UnloadedError("Work isn't loaded. Have you tried calling Work.reload()?")
+        
+        if self._session is None:
+            raise utils.AuthError("Invalid session")
+          
+        utils.collect(self, self._session, collections)
         
     @cached_property
     def _bookmarkid(self):
