@@ -212,7 +212,8 @@ class Work:
             "title",
             "warnings",
             "id",
-            "words"
+            "words",
+            "collections"
         )
         string_fields = (
             "date_edited",
@@ -897,6 +898,21 @@ class Work:
 
         chapterStatus = self._soup.find("dd", {"class": "chapters"}).string.split("/")
         return chapterStatus[0] == chapterStatus[1]
+    
+    @cached_property
+    def collections(self):
+        """Returns all the collections the work belongs to
+
+        Returns:
+            list: List of collections
+        """
+
+        html = self._soup.find("dd", {"class": "collections"})
+        collections = []
+        if html is not None:
+            for collection in html.find_all("a"):
+                collections.append(collection.get_text())
+        return collections
     
     def get(self, *args, **kwargs):
         """Request a web page and return a Response object"""  
