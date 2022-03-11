@@ -63,6 +63,11 @@ class BookmarkError(Exception):
         super().__init__(message)
         self.errors = errors
 
+class CollectError(Exception):
+    def __init__(self, message, errors=[]):
+        super().__init__(message)
+        self.errors = errors
+
 class Query:
     def __init__(self):
         self.fields = []
@@ -544,3 +549,57 @@ def get_pseud_id(ao3object, session=None, specified_pseud=None):
     else:
         pseud_id = pseud.attrs["value"]
     return pseud_id
+
+def collect(collectable, session, collections):
+    """Invites a work to a collection. Be careful, you can collect a work multiple times
+
+    Args:
+        work (Work): Work object
+        session (AO3.Session): Session object
+        collections (list, optional): What collections to add this work to. Defaults to None.
+    """
+    
+    if session is None: session = collectable.session
+    if session == None or not session.is_authed:
+        raise AuthError("Invalid session")
+    
+    if collectable.authenticity_token is not None:
+        at = collectable.authenticity_token
+    else:
+        at = session.authenticity_token
+      
+    if collections is None: collections = []   
+    
+    data = {
+        "authenticity_token": at,
+        "collection_names": ",".join(collections),
+        "commit": "Add"
+    }
+    
+    url = url_join(collectable.url, "collection_items")
+    req = session.session.post(url, data=data, allow_redirects=True)
+    handle_collect_errors(req)
+
+def handle_collect_errors(request):
+    print(request.status_code)
+    if request.status_code == 302:
+        if request.headers["Location"] == AO3_AUTH_ERROR_URL:
+            raise AuthError(
+                "Invalid authentication token. Try calling session.refresh_auth_token()"
+            )
+#    else:
+#        if request.status_code == 200:
+#            soup = BeautifulSoup(request.content, "lxml")
+#            error_div = soup.find("div", {"id": "error", "class": "error"})
+#            if error_div is None:
+#                raise UnexpectedResponseError(f"An unknown error occurred ({request.status_code})")
+"""
+As far as I can tell, an error code of 200 does actually add a work to a specific collection.
+"""              
+#            errors = [item.getText() for item in error_div.findAll("li")]
+#            if len(errors) == 0:
+#                raise CollectError("An unknown error occurred")
+#            raise CollectError("Error(s) adding/inviting this work to collection(s):" + " ".join(errors))
+
+        raise UnexpectedResponseError(
+            f"Unexpected HTTP status code received ({request.status_code})")
