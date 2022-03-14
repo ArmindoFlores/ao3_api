@@ -578,15 +578,14 @@ def collect(collectable, session, collections):
     
     url = url_join(collectable.url, "collection_items")
     req = session.session.post(url, data=data, allow_redirects=True)
-  
+      
     if req.status_code == 302:
         if req.headers["Location"] == AO3_AUTH_ERROR_URL:
-            raise AuthError(
-                "Invalid authentication token. Try calling session.refresh_auth_token()"
-            )
+            raise AuthError("Invalid authentication token. Try calling session.refresh_auth_token()")
     if req.status_code == 200:
         print("Work successfully added/invited to collection")    
-    elif not req.status_code == 200:
+
+    if not req.status_code == 200 and not req.status_code == 302:
         soup = BeautifulSoup(req.content, "lxml")
         error_div = soup.find("div", {"id": "error", "class": "error"})
         if error_div is None:
@@ -595,6 +594,6 @@ def collect(collectable, session, collections):
         if len(errors) == 0:
             raise CollectError("An unknown error occurred")
         raise CollectError("Error(s) adding/inviting this work to collection(s):" + " ".join(errors))
-
+      
     else:
-        raise UnexpectedResponseError(f"Unexpected HTTP status code received ({response.status_code})")
+        raise UnexpectedResponseError(f"Unexpected HTTP status code received ({req.status_code})")
