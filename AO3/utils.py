@@ -582,16 +582,23 @@ def collect(collectable, session, collections):
     if req.status_code == 302:
         if req.headers["Location"] == AO3_AUTH_ERROR_URL:
             raise AuthError("Invalid authentication token. Try calling session.refresh_auth_token()")
-    if req.status_code == 200:
-        print("Work successfully added/invited to collection")    
-    elif not req.status_code == 200 and not req.status_code == 302:
+    elif req.status_code == 200:
         soup = BeautifulSoup(req.content, "lxml")
-        error_div = soup.find("div", {"id": "error", "class": "error"})
-        if error_div is None:
-            raise UnexpectedResponseError(f"An unknown error occurred ({req.status_code})")
-        errors = [item.getText() for item in error_div.findAll("li")]
-        if len(errors) == 0:
-            raise CollectError("An unknown error occurred")
-        raise CollectError("Error(s) adding/inviting this work to collection(s):" + " ".join(errors))
+        notice_div = soup.find("div", {"class": "notice"})
+        
+        if notice_div is not None:
+                print(notice_div.string)
+        error_div = soup.find("div", {"class": "error"})
+        
+        if error_div is None and notice_div is None:
+            raise UnexpectedResponseError("An unknown error occurred")
+
+        if error_div is not None:
+            errors = [item.getText() for item in error_div.findAll("ul")]
+            
+            if len(errors) == 0:
+                raise CollectError("An unknown error occurred")
+              
+            raise CollectError("We couldn't add your submission to the following collection(s): " + " ".join(errors))  
     else:
         raise UnexpectedResponseError(f"Unexpected HTTP status code received ({req.status_code})")
