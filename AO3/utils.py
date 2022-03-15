@@ -217,6 +217,26 @@ def workid_from_url(url):
             return int(workid)
     return
 
+def collectionid_from_url(url):
+    """Get the collectionid from an archiveofourown.org website url
+
+    Args:
+        url (str): Collection URL 
+
+    Returns:
+        str: Collection ID
+    """
+    split_url = url.split("/")
+    try:
+        index = split_url.index("collections")
+    except ValueError:
+        return
+    if len(split_url) >= index + 1:
+        collectionid = split_url[index + 1].split("?")[0]
+        if re.search("[^a-z_A-Z]", collectionid) is None:
+            return str(collectionid)
+    return
+
 def comment(commentable, comment_text, session, fullwork=False, commentid=None, email="", name="", pseud=None):
     """Leaves a comment on a specific work
 
