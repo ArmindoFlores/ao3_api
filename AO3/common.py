@@ -23,6 +23,9 @@ def get_work_from_banner(work):
             elif a.attrs["href"].startswith("/works"):
                 workname = a.string
                 workid = utils.workid_from_url(a['href'])
+            elif a.attrs["href"].startswith("/collections"):
+                workname = a.string
+                workid = utils.workid_from_url(a['href'])
     except AttributeError:
         pass
             
