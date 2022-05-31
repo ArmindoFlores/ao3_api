@@ -578,27 +578,25 @@ def collect(collectable, session, collections):
     
     url = url_join(collectable.url, "collection_items")
     req = session.session.post(url, data=data, allow_redirects=True)
-    handle_collect_errors(req)
+      
+    if req.status_code == 302:
+        if req.headers["Location"] == AO3_AUTH_ERROR_URL:
+            raise AuthError("Invalid authentication token. Try calling session.refresh_auth_token()")
+    elif req.status_code == 200:
+        soup = BeautifulSoup(req.content, "lxml")
+        notice_div = soup.find("div", {"class": "notice"})
+        
+        error_div = soup.find("div", {"class": "error"})
+        
+        if error_div is None and notice_div is None:
+            raise UnexpectedResponseError("An unknown error occurred")
 
-def handle_collect_errors(request):
-    if request.status_code == 302:
-        if request.headers["Location"] == AO3_AUTH_ERROR_URL:
-            raise AuthError(
-                "Invalid authentication token. Try calling session.refresh_auth_token()"
-            )
-#    else:
-#        if request.status_code == 200:
-#            soup = BeautifulSoup(request.content, "lxml")
-#            error_div = soup.find("div", {"id": "error", "class": "error"})
-#            if error_div is None:
-#                raise UnexpectedResponseError(f"An unknown error occurred ({request.status_code})")
-    """
-    As far as I can tell, an error code of 200 does actually add a work to a specific collection.
-    """              
-#            errors = [item.getText() for item in error_div.findAll("li")]
-#            if len(errors) == 0:
-#                raise CollectError("An unknown error occurred")
-#            raise CollectError("Error(s) adding/inviting this work to collection(s):" + " ".join(errors))
-    if request.status_code != 200:
-        raise UnexpectedResponseError(
-            f"Unexpected HTTP status code received ({request.status_code})")
+        if error_div is not None:
+            errors = [item.getText() for item in error_div.findAll("ul")]
+            
+            if len(errors) == 0:
+                raise CollectError("An unknown error occurred")
+              
+            raise CollectError("We couldn't add your submission to the following collection(s): " + " ".join(errors))  
+    else:
+        raise UnexpectedResponseError(f"Unexpected HTTP status code received ({req.status_code})")
