@@ -7,4 +7,4 @@ from .session import GuestSession, Session
 from .users import User
 from .works import Work
 
-VERSION = "2.2.1"
+VERSION = "2.3.0"
