@@ -469,7 +469,7 @@ class Session(GuestSession):
         url = self._bookmarks_url.format(self.username, page)
         soup = self.request(url)
         bookmarks = soup.find("ol", {"class": "bookmark index group"})
-        for bookm in bookmarks.find_all("li", {"class": "bookmark blurb group"}):
+        for bookm in bookmarks.find_all("li", {"class": ["bookmark", "index", "group"]}):
             authors = []
             workid = -1
             if bookm.h4 is not None:
