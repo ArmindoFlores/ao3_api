@@ -581,7 +581,6 @@ def collect(collectable, session, collections):
     handle_collect_errors(req)
 
 def handle_collect_errors(request):
-    print(request.status_code)
     if request.status_code == 302:
         if request.headers["Location"] == AO3_AUTH_ERROR_URL:
             raise AuthError(
@@ -593,13 +592,13 @@ def handle_collect_errors(request):
 #            error_div = soup.find("div", {"id": "error", "class": "error"})
 #            if error_div is None:
 #                raise UnexpectedResponseError(f"An unknown error occurred ({request.status_code})")
-"""
-As far as I can tell, an error code of 200 does actually add a work to a specific collection.
-"""              
+    """
+    As far as I can tell, an error code of 200 does actually add a work to a specific collection.
+    """              
 #            errors = [item.getText() for item in error_div.findAll("li")]
 #            if len(errors) == 0:
 #                raise CollectError("An unknown error occurred")
 #            raise CollectError("Error(s) adding/inviting this work to collection(s):" + " ".join(errors))
-
+    if request.status_code != 200:
         raise UnexpectedResponseError(
             f"Unexpected HTTP status code received ({request.status_code})")
