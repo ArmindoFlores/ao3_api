@@ -153,7 +153,7 @@ def search(
         rating (int, optional): Rating for the work. 9 for Not Rated, 10 for General Audiences, 11 for Teen And Up Audiences, 12 for Mature, 13 for Explicit. Defaults to None.
         hits (AO3.utils.Constraint, optional): Number of hits. Defaults to None.
         kudos (AO3.utils.Constraint, optional): Number of kudos. Defaults to None.
-        crossovers (, optional): 
+        crossovers (bool, optional): If specified, if false, exclude crossovers, if true, include only crossovers
         bookmarks (AO3.utils.Constraint, optional): Number of bookmarks. Defaults to None.
         comments (AO3.utils.Constraint, optional): Number of comments. Defaults to None.
         page (int, optional): Page number. Defaults to 1.
