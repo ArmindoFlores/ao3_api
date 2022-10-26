@@ -471,6 +471,7 @@ class Session(GuestSession):
         bookmarks = soup.find("ol", {"class": "bookmark index group"})
         for bookm in bookmarks.find_all("li", {"class": ["bookmark", "index", "group"]}):
             authors = []
+            recommended = False
             workid = -1
             if bookm.h4 is not None:
                 for a in bookm.h4.find_all("a"):
@@ -480,11 +481,19 @@ class Session(GuestSession):
                     elif a.attrs["href"].startswith("/works"):
                         workname = str(a.string)
                         workid = utils.workid_from_url(a["href"])
+
+                # Get whether the bookmark is recommended
+                for span in bookm.p.find_all("span"):
+                    if "title" in span.attrs.keys():
+                        if span["title"] == "Rec":
+                            recommended = True
+
             
                 if workid != -1:
                     new = Work(workid, load=False)
                     setattr(new, "title", workname)
                     setattr(new, "authors", authors)
+                    setattr(new, "recommended", recommended)
                     if new not in self._bookmarks:
                         self._bookmarks.append(new)
             
