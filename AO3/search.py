@@ -39,6 +39,7 @@ class Search:
         rating=None,
         hits=None,
         kudos=None,
+        crossovers=None,
         bookmarks=None,
         comments=None,
         completion_status=None,
@@ -64,6 +65,7 @@ class Search:
         self.rating = rating
         self.hits = hits
         self.kudos = kudos
+        self.crossovers = crossovers
         self.bookmarks = bookmarks
         self.comments = comments
         self.completion_status = completion_status
@@ -87,7 +89,7 @@ class Search:
         soup = search(
             self.any_field, self.title, self.author, self.single_chapter,
             self.word_count, self.language, self.fandoms, self.rating, self.hits,
-            self.kudos, self.bookmarks, self.comments, self.completion_status, self.page,
+            self.kudos, self.crossovers, self.bookmarks, self.comments, self.completion_status, self.page,
             self.sort_column, self.sort_direction, self.revised_at, self.session,
             self.characters, self.relationships, self.tags)
 
@@ -123,6 +125,7 @@ def search(
     rating=None,
     hits=None,
     kudos=None,
+    crossovers=None,
     bookmarks=None,
     comments=None,
     completion_status=None,
@@ -150,6 +153,7 @@ def search(
         rating (int, optional): Rating for the work. 9 for Not Rated, 10 for General Audiences, 11 for Teen And Up Audiences, 12 for Mature, 13 for Explicit. Defaults to None.
         hits (AO3.utils.Constraint, optional): Number of hits. Defaults to None.
         kudos (AO3.utils.Constraint, optional): Number of kudos. Defaults to None.
+        crossovers (bool, optional): If specified, if false, exclude crossovers, if true, include only crossovers
         bookmarks (AO3.utils.Constraint, optional): Number of bookmarks. Defaults to None.
         comments (AO3.utils.Constraint, optional): Number of comments. Defaults to None.
         page (int, optional): Page number. Defaults to 1.
@@ -190,6 +194,8 @@ def search(
         query.add_field(f"work_search[hits]={hits}")
     if kudos is not None:
         query.add_field(f"work_search[kudos_count]={kudos}")
+    if crossovers is not None:
+        query.add_field(f"work_search[crossover]={'T' if crossovers else 'F'}")
     if bookmarks is not None:
         query.add_field(f"work_search[bookmarks_count]={bookmarks}")
     if comments is not None:
