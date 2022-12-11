@@ -111,7 +111,7 @@ class Search:
 
         self.results = works
         maindiv = soup.find("div", {"class": "works-search region", "id": "main"})
-        self.total_results = int(maindiv.find("h3", {"class": "heading"}).getText().strip().split(" ")[0])
+        self.total_results = int(maindiv.find("h3", {"class": "heading"}).getText().strip().split(" ")[0].replace(",", ""))
         self.pages = ceil(self.total_results / 20)
 
 def search(
