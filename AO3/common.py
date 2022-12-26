@@ -31,7 +31,7 @@ def get_work_from_banner(work):
             if 'rel' in a.attrs.keys():
                 if "author" in a['rel']:
                     authors.append(User(a.string, load=False))
-            elif a.attrs["href"].startswith("/works"):
+            elif "works/" in a.attrs["href"]:
                 workname = a.string
                 workid = utils.workid_from_url(a['href'])
     except AttributeError:
