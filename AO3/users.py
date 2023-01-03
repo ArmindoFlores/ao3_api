@@ -208,10 +208,9 @@ class User:
             int: Number of works
         """
 
-        div = self._soup_works.find("div", {"id": "inner"})
-        span = div.find("span", {"class": "current"}).getText().replace("(", "").replace(")", "")
-        n = span.split(" ")[1]
-        return int(self.str_format(n))   
+        div = self._soup_works.find("div", {"class": "works-index dashboard filtered region"})
+        h2 = div.h2.text.split()
+        return int(h2[4].replace(',', '')) 
 
     @cached_property
     def _works_pages(self):
@@ -276,10 +275,9 @@ class User:
             int: Number of bookmarks 
         """
 
-        div = self._soup_bookmarks.find("div", {"id": "inner"})
-        span = div.find("span", {"class": "current"}).getText().replace("(", "").replace(")", "")
-        n = span.split(" ")[1]
-        return int(self.str_format(n))   
+        div = self._soup_bookmarks.find("div", {"class": "bookmarks-index dashboard filtered region"})
+        h2 = div.h2.text.split()
+        return int(h2[4].replace(',', ''))  
 
     @cached_property
     def _bookmarks_pages(self):
