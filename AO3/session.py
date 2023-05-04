@@ -508,11 +508,9 @@ class Session(GuestSession):
 
         url = self._bookmarks_url.format(self.username, 1)
         soup = self.request(url)
-        div = soup.find("div", {"id": "inner"})
-        span = div.find("span", {"class": "current"}).getText().replace("(", "").replace(")", "")
-        n = span.split(" ")[1]
-        
-        return int(self.str_format(n))
+        div = soup.find("div", {"class": "bookmarks-index dashboard filtered region"})
+        h2 = div.h2.text.split()
+        return int(h2[4].replace(',', ''))
     
     def get_statistics(self, year=None):
         year = "All+Years" if year is None else str(year)
