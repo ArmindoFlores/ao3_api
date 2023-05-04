@@ -72,14 +72,20 @@ class Work:
             load_chapters (bool, optional): If false, chapter text won't be parsed, and Work.load_chapters() will have to be called. Defaults to True.
         """
         
+        self._soup = self.request(f"https://archiveofourown.org/works/{self.id}?view_adult=true&view_full_work=true")
+
+        try: 
+            if "Error 404" in self._soup.find("h2", {"class", "heading"}).text:
+                raise utils.InvalidIdError("Cannot find work")
+        except AttributeError:
+            warnings.warn("This work failed to load. This is probably because the work is restricted or a Mistery Work")
+            return 
+
         for attr in self.__class__.__dict__:
             if isinstance(getattr(self.__class__, attr), cached_property):
                 if attr in self.__dict__:
                     delattr(self, attr)
         
-        self._soup = self.request(f"https://archiveofourown.org/works/{self.id}?view_adult=true&view_full_work=true")
-        if "Error 404" in self._soup.find("h2", {"class", "heading"}).text:
-            raise utils.InvalidIdError("Cannot find work")
         if load_chapters:
             self.load_chapters()
         
