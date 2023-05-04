@@ -41,6 +41,7 @@ class Search:
         kudos=None,
         crossovers=None,
         bookmarks=None,
+        excluded_tags="",
         comments=None,
         completion_status=None,
         page=1,
@@ -67,6 +68,7 @@ class Search:
         self.kudos = kudos
         self.crossovers = crossovers
         self.bookmarks = bookmarks
+        self.excluded_tags = excluded_tags
         self.comments = comments
         self.completion_status = completion_status
         self.page = page
@@ -89,7 +91,7 @@ class Search:
         soup = search(
             self.any_field, self.title, self.author, self.single_chapter,
             self.word_count, self.language, self.fandoms, self.rating, self.hits,
-            self.kudos, self.crossovers, self.bookmarks, self.comments, self.completion_status, self.page,
+            self.kudos, self.crossovers, self.bookmarks, self.excluded_tags, self.comments, self.completion_status, self.page,
             self.sort_column, self.sort_direction, self.revised_at, self.session,
             self.characters, self.relationships, self.tags)
 
@@ -127,6 +129,7 @@ def search(
     kudos=None,
     crossovers=None,
     bookmarks=None,
+    excluded_tags="",
     comments=None,
     completion_status=None,
     page=1,
@@ -155,6 +158,7 @@ def search(
         kudos (AO3.utils.Constraint, optional): Number of kudos. Defaults to None.
         crossovers (bool, optional): If specified, if false, exclude crossovers, if true, include only crossovers
         bookmarks (AO3.utils.Constraint, optional): Number of bookmarks. Defaults to None.
+        excluded_tags (str, optional): Tags to exclude. Defaults to "".
         comments (AO3.utils.Constraint, optional): Number of comments. Defaults to None.
         page (int, optional): Page number. Defaults to 1.
         sort_column (str, optional): Which column to sort on. Defaults to "".
@@ -198,6 +202,8 @@ def search(
         query.add_field(f"work_search[crossover]={'T' if crossovers else 'F'}")
     if bookmarks is not None:
         query.add_field(f"work_search[bookmarks_count]={bookmarks}")
+    if excluded_tags != "":
+        query.add_field(f"work_search[excluded_tag_names]={excluded_tags}")
     if comments is not None:
         query.add_field(f"work_search[comments_count]={comments}")
     if completion_status is not None:
