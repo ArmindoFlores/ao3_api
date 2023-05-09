@@ -4,6 +4,9 @@ import time
 import requests
 
 
+CUSTOM_USERAGENT = "ao3-api-bot"
+
+
 class Requester:
     """Requester object"""
     
@@ -60,6 +63,10 @@ class Requester:
                     self._requests.append(time.time())
                 self.total += 1
                            
+        if "headers" not in kwargs:
+            kwargs["headers"] = {"User-Agent": CUSTOM_USERAGENT}
+        else:
+            kwargs["headers"]["User-Agent"] = CUSTOM_USERAGENT
         if "session" in kwargs:
             sess = kwargs["session"]
             del kwargs["session"]
