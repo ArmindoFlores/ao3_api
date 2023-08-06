@@ -1,6 +1,7 @@
 import os
 import pickle
 import re
+from typing import List, Optional
 
 from bs4 import BeautifulSoup
 
@@ -13,60 +14,61 @@ _LANGUAGES = None
 AO3_AUTH_ERROR_URL = "https://archiveofourown.org/auth_error"
 
 
-class LoginError(Exception):
-    def __init__(self, message, errors=[]):
-        super().__init__(message)
-        self.errors = errors
+class AO3Error(Exception):
+    """Base exception for AO3."""
 
-class UnloadedError(Exception):
-    def __init__(self, message, errors=[]):
+    def __init__(self, message: Optional[str] = None, errors: Optional[List[str]] = None):
         super().__init__(message)
-        self.errors = errors
-        
-class UnexpectedResponseError(Exception):
-    def __init__(self, message, errors=[]):
-        super().__init__(message)
-        self.errors = errors
-        
-class InvalidIdError(Exception):
-    def __init__(self, message, errors=[]):
-        super().__init__(message)
-        self.errors = errors
-        
-class DownloadError(Exception):
-    def __init__(self, message, errors=[]):
-        super().__init__(message)
-        self.errors = errors
-        
-class AuthError(Exception):
-    def __init__(self, message, errors=[]):
-        super().__init__(message)
-        self.errors = errors 
-        
-class DuplicateCommentError(Exception):
-    def __init__(self, message, errors=[]):
-        super().__init__(message)
-        self.errors = errors
-        
-class PseudError(Exception):
-    def __init__(self, message, errors=[]):
-        super().__init__(message)
-        self.errors = errors
-        
-class HTTPError(Exception):
-    def __init__(self, message, errors=[]):
-        super().__init__(message)
-        self.errors = errors
-        
-class BookmarkError(Exception):
-    def __init__(self, message, errors=[]):
-        super().__init__(message)
-        self.errors = errors
+        self.errors = errors or []
 
-class CollectError(Exception):
-    def __init__(self, message, errors=[]):
-        super().__init__(message)
-        self.errors = errors
+
+class LoginError(AO3Error):
+    """Exception that's raised when an attempt to log in to AO3 fails."""
+
+
+class UnloadedError(AO3Error):
+    """Exception that's raised when the content of an AO3 object hasn't been loaded, but accessing it was attempted."""
+
+
+class UnexpectedResponseError(AO3Error):
+    """Exception that's raised when something 'unexpected' happens. Used liberally."""
+
+
+class InvalidIdError(AO3Error):
+    """Exception that's raised when an invalid AO3 object ID was passed in."""
+
+
+class DownloadError(AO3Error):
+    """Exception that's raised when downloading an AO3 work fails."""
+
+
+class AuthError(AO3Error):
+    """Exception that's raised when the authentication token for the AO3 session is invalid."""
+
+
+class DuplicateCommentError(AO3Error):
+    """Exception that's raised when attempting to post a comment that already exists."""
+
+
+class PseudError(AO3Error):
+    """Exception that's raised when a pseud's ID couldn't be found."""
+
+
+class HTTPError(AO3Error):
+    """Exception that's raised when being rate-limited."""
+
+    def __init__(self, message: Optional[str] = None, errors: Optional[List[str]] = None):
+        message = message or "We are being rate-limited. Try again in a while or reduce the number of requests."
+        super().__init__(message, errors)
+
+
+class BookmarkError(AO3Error):
+    """Exception that's raised when attempting to create or access a bookmark fails."""
+
+
+class CollectError(AO3Error):
+    """Exception that's raised when attempting to invite a work to a collection fails."""
+
 
 class Query:
     def __init__(self):
